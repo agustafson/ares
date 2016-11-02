@@ -7,6 +7,8 @@ import java.nio.charset.Charset
 import java.util.concurrent.{ExecutorService, Executors, ThreadPoolExecutor}
 
 import ares.RedisCommands
+import cats.Id
+import cats.data.{State, StateT}
 import fs2.{Chunk, NonEmptyChunk, Strategy, Stream, Task}
 import fs2.io.tcp
 import fs2.io.tcp.Socket
@@ -71,9 +73,13 @@ class Fs2TaskInterpreter extends RedisCommands.Interp[Task] {
 object RedisResponseHandler {
   import RedisConstants._
 
+  type ByteVectorState[A] = StateT[Id, Vector[Byte], A]
+  //def byteVectorState[A]: ByteVectorState[A] =
+
   sealed trait RedisResponse
   case class IntegerReply(long: Long) extends RedisResponse
   case class BulkReply(body: Vector[Byte]) extends RedisResponse
+  case class ErrorReply(errorMessage: String) extends RedisResponse
 
   def handleResponse(bytes: Vector[Byte]): RedisResponse = {
     val messageBytes = bytes.tail
@@ -93,58 +99,33 @@ object RedisResponseHandler {
     }
   }
 
-  private def processStatusCodeReply(messageBytes: Vector[Byte]) = ???
+  private def processStatusCodeReply(bytes: Vector[Byte]) = ???
 
-  private def processBulkReply(messageBytes: Vector[Byte]): BulkReply = {
-    println("full messageBytes: >>>")
-    println(messageBytes)
-    println("<<<")
-    val (firstLine, remainder) = splitAtFirstNewLine(messageBytes)
-    val firstLineString = firstLine.mkString
-    println("firstline, remainder: >>>")
-    println(firstLine)
-    println(firstLineString)
-    println(remainder)
-    println("<<<")
-
-    val messageLength = firstLineString.toInt
-    println("remainder: >>>")
-    println(remainder)
-    println("<<<")
-    val body = remainder.take(messageLength)
-    val bodyString = asString(body/*, Charset.forName("UTF-16")*/)
-    println(s"output message: length=$messageLength; body= >>>")
-    println(body)
-    println("<<<")
-    BulkReply(body)
+  private def processBulkReply(bytes: Vector[Byte]): BulkReply = {
+    val (remainingBytes, messageLength) = getIntegerLine.run(bytes)
+    val body = takeLine.runA(remainingBytes)
+    BulkReply(body.take(messageLength.toInt))
   }
 
-  private def processMultiBulkReply(messageBytes: Vector[Byte]) = ???
+  private def processMultiBulkReply(bytes: Vector[Byte]) = ???
 
-  private def processInteger(messageBytes: Vector[Byte]): IntegerReply = {
-    val (firstLine, _) = splitAtFirstNewLine(messageBytes)
-    IntegerReply(asString(firstLine).toLong)
+  private def processInteger(bytes: Vector[Byte]): IntegerReply = {
+    IntegerReply(getIntegerLine.runA(bytes))
   }
 
-  private def splitAtFirstNewLine(messageBytes: Vector[Byte]): (Vector[Byte], Vector[Byte]) = {
-    @tailrec
-    def findNextCrLf(bytes: Vector[Byte], currentIndex: Int): Int = {
-      if (bytes.take(2) == CRLF) currentIndex
-      else findNextCrLf(bytes.tail, currentIndex + 1)
-    }
-    val crlfIndex = findNextCrLf(messageBytes, 0)
-    val (firstLine, remainder) = messageBytes.splitAt(crlfIndex)
-    val drop = remainder.drop(2)
-    println("rem: >>>")
-    println(remainder)
-    println("<<<")
-    (firstLine, drop)
+  private def processError(bytes: Vector[Byte]): ErrorReply = {
+    val b = takeLine.runA(bytes)
+    ErrorReply(new String(b.toArray))
   }
 
-  private def processError(messageBytes: Vector[Byte]) = ???
 
-  private def asString(bytes: Vector[Byte]): String = {
-    new String(bytes.toArray)
+  private val takeLine: ByteVectorState[Vector[Byte]] = StateT[Id, Vector[Byte], Vector[Byte]] { bytes =>
+    val crlfIndex = bytes.indexOfSlice(CRLF)
+    val (firstLine, remainingBytes) = bytes.splitAt(crlfIndex)
+    (remainingBytes.drop(2), firstLine)
   }
+
+  private val getIntegerLine: ByteVectorState[Long] =
+    takeLine.map(bytes => bytes.map(_.toChar).mkString.toLong)
 
 }

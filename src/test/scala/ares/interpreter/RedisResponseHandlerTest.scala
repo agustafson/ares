@@ -22,7 +22,7 @@ class RedisResponseHandlerTest extends Specification with ScalaCheck  {
         RedisConstants.DOLLAR_BYTE ++= bytes.length.toString.getBytes ++= RedisConstants.CRLF ++=
         bytes ++= RedisConstants.CRLF
 
-      handleResponse(buffer.result().toVector) === BulkReply(bytes.toVector)
+      handleResponse(buffer.result().toVector) === BulkReply(Some(bytes.toVector))
     }
 
     property("handle error response") = Prop.forAllNoShrink(Gen.alphaStr) { (errorMessage: String) =>

@@ -3,8 +3,7 @@ organization := "com.itv"
 name := "ares"
 
 scalaVersion := "2.11.8"
-
-crossScalaVersions := Seq(scalaVersion.value, "2.12.0-RC2")
+crossScalaVersions := Seq("2.11.8", "2.12.0")
 
 scalacOptions ++= Seq(
   "-encoding", "UTF-8", // 2 args
@@ -17,7 +16,7 @@ scalacOptions ++= Seq(
   "-unchecked",
   "-Xlint",
   "-Yno-adapted-args",
-  "-Ywarn-dead-code",
+  //"-Ywarn-dead-code",
   "-Ywarn-value-discard"
 )
 
@@ -38,7 +37,8 @@ libraryDependencies ++= {
     "org.typelevel" %% "cats" % "0.7.2",
     "co.fs2" %% "fs2-core" % fs2,
     "co.fs2" %% "fs2-io" % fs2,
-    "org.scalacheck" %% "scalacheck" % "1.13.3" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.0" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
     "org.specs2"     %% "specs2-core"       % "3.8.4"  % "test",
     "org.specs2"     %% "specs2-scalacheck" % "3.8.4"  % "test"
   )

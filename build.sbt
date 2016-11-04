@@ -32,7 +32,6 @@ resolvers += Resolver.jcenterRepo
 libraryDependencies ++= {
   val fs2 = "0.9.1"
   Seq(
-    "redis.clients" % "jedis" % "2.8.1",
     "com.thangiee" %% "freasy-monad" % "0.4.1",
     "org.typelevel" %% "cats" % "0.7.2",
     "co.fs2" %% "fs2-core" % fs2,

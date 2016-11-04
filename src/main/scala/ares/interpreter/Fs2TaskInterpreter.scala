@@ -39,103 +39,37 @@ class Fs2TaskInterpreter(redisHost: InetSocketAddress)(
   import Task.asyncInstance
   import RedisConstants._
 
-//  private val executor = Executors.newFixedThreadPool(8, Strategy.daemonThreadFactory("redis"))
-//  implicit val strategy = Strategy.fromExecutor(executor)
-//  import Task.asyncInstance
-//  implicit val asg = AsynchronousChannelGroup.withCachedThreadPool(executor, 10)
-
   override def get(key: String): Task[Option[String]] = {
     val chunk = createCommand("GET", key)
-    //(Stream.chunk(chunk))
     sendCommand(chunk).map {
       case reply: BulkReply =>
         println(s"the get reply is: $reply")
         reply.body.map(_.asString)
       case error: ErrorReply =>
         Some(error.errorMessage)
+      case unknownReply => throw new RuntimeException("boom")
     }
   }
 
   override def set(key: String, value: String): Task[Either[ErrorReply, Unit]] = {
     val chunk = createCommand("SET", key, value)
-    sendCommand(chunk).map { reply =>
-      println(s"set reply is $reply")
-      reply match {
-        case SimpleStringReply("OK") => Right(Unit)
-        case errorReply: ErrorReply => Left(errorReply)
-        case unknownReply => throw new RuntimeException("boom")
-      }
+    sendCommand(chunk).map {
+      case SimpleStringReply("OK") => Right(())
+      case errorReply: ErrorReply => Left(errorReply)
+      case unknownReply => throw new RuntimeException("boom")
     }
   }
 
-  //private lazy val client: Stream[Task, Socket[Task]] = tcp.client[Task](redisHost)
+  private lazy val client: Stream[Task, Socket[Task]] = tcp.client[Task](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
 
   private def sendCommand(chunk: Chunk[Byte]): Task[RedisResponse] = {
     println(s"sending command $chunk")
 
-    /*
-    def writeAndReadResponse(socket: Socket[Task]): Task[Vector[Byte]] = {
-      for {
-        w <- socket.write(chunk, Some(2.seconds))
-        _ <- socket.endOfOutput
-        _ = println(s"awaiting response: $w")
-        r <- socket.reads(1024, Some(2.seconds)).runLog
-        _ <- socket.endOfInput
-        _ = println(s"result is: $r")
-      } yield r
-    }
-    */
-
-    /*
-    val result: Stream[Task, Byte] = for {
-      writeResult <- client.flatMap { socket =>
-        println(s"writing")
-        writeAndReadResponse(socket)
-      }
-    } yield result
-    println("running thing")
-    result.runLog.map(RedisResponseHandler.handleResponse)
-    */
-
-    /*client.mapAccumulate(Vector.empty[Byte]) {
-      case (bytes, socket) =>
-        writeAndReadResponse(socket).map(bytes1 => bytes ++ bytes1)
-    }*/
-    val redHost = tcp.client[Task](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
-    println(s"redis host: $redHost")
-
-
-
     val writeAndRead: (Socket[Task]) => Stream[Task, Vector[Byte]] = { socket =>
-      println("in client trying write")
-      val streamChunk = Stream.chunk(chunk)
-      println(s"create stream chunk: $streamChunk")
-      val writtenToSocket = streamChunk.to(socket.writes(Some(2.seconds)))
-      println("written to socket")
-      val drained = writtenToSocket.drain
-      println("drained")
-      val writeResult = drained.onFinalize(socket.endOfOutput)
-      println("end of output")
-      val reads = socket.reads(1024, Some(2.seconds))
-      println("read from socket")
-      val readResult = reads.chunks.map(_.toVector)
-      println("chunks mapped")
-      writeResult ++ readResult
+      Stream.chunk(chunk).to(socket.writes(Some(2.seconds))).drain.onFinalize(socket.endOfOutput) ++
+        socket.reads(1024, Some(2.seconds)).chunks.map(_.toVector)
     }
-    val result = redHost.flatMap(writeAndRead).runFold(Vector.empty[Byte])(_ ++ _).map(RedisResponseHandler.handleResponse)
-    //val result = redHost.map(_ => RedisResponseHandler.ErrorReply("wibble")).runLog.map(_.last)
-    println(s"got result: $result")
-    result
-    /*.runFold(Task.now(Vector.empty[Byte])) {
-      case (bytesTask, nextBytesTask) =>
-        for {
-          a <- bytesTask
-          b <- nextBytesTask
-        } yield a ++ b
-    }*/
-
-
-    //client.map(_.write(chunk, Some(2.seconds))).runLog
+    client.flatMap(writeAndRead).runFold(Vector.empty[Byte])(_ ++ _).map(RedisResponseHandler.handleResponse)
   }
 
   private def intCrlf(i: Int): Vector[Byte] = i.toString.toVector.map(_.toByte) ++ CRLF
@@ -159,7 +93,6 @@ object RedisResponseHandler {
   import RedisConstants._
 
   type ByteVectorState[A] = StateT[Id, Vector[Byte], A]
-  //def byteVectorState[A]: ByteVectorState[A] =
 
   sealed trait RedisResponse
   case class SimpleStringReply(body: String) extends RedisResponse
@@ -207,8 +140,7 @@ object RedisResponseHandler {
   }
 
   private def processError(bytes: Vector[Byte]): ErrorReply = {
-    val b = takeLine.runA(bytes)
-    ErrorReply(b.asString)
+    ErrorReply(takeLine.runA(bytes).asString)
   }
 
 

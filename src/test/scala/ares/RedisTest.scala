@@ -24,8 +24,4 @@ class RedisTest extends Specification with ScalaCheck {
   }
 
   s2"Can send and receive content$p1"
-
-  "redis" in new RedisClientScope {
-    jInt.set("foo", "bar").unsafeRun() === Right(())
-  }
 }

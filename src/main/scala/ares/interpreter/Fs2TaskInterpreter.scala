@@ -12,6 +12,7 @@ import ares.RedisCommands
 import ares.interpreter.RedisResponseHandler.{BulkReply, ErrorReply, RedisResponse, SimpleStringReply}
 import cats.Id
 import cats.data.StateT
+import com.typesafe.scalalogging.StrictLogging
 import fs2.io.tcp
 import fs2.io.tcp.Socket
 import fs2.{Chunk, Strategy, Stream, Task}
@@ -34,16 +35,15 @@ class Fs2TaskInterpreter(redisHost: InetSocketAddress)(
   implicit tcpACG: AsynchronousChannelGroup,
   strategy: Strategy
 )
-  extends RedisCommands.Interp[Task] {
+  extends RedisCommands.Interp[Task] with StrictLogging {
 
   import Task.asyncInstance
   import RedisConstants._
 
   override def get(key: String): Task[Option[String]] = {
-    val chunk = createCommand("GET", key)
-    sendCommand(chunk).map {
+    sendCommand(createCommand("GET", key)).map {
       case reply: BulkReply =>
-        println(s"the get reply is: $reply")
+        logger.debug(s"the get reply is: $reply")
         reply.body.map(_.asString)
       case error: ErrorReply =>
         Some(error.errorMessage)
@@ -52,8 +52,7 @@ class Fs2TaskInterpreter(redisHost: InetSocketAddress)(
   }
 
   override def set(key: String, value: String): Task[Either[ErrorReply, Unit]] = {
-    val chunk = createCommand("SET", key, value)
-    sendCommand(chunk).map {
+    sendCommand(createCommand("SET", key, value)).map {
       case SimpleStringReply("OK") => Right(())
       case errorReply: ErrorReply => Left(errorReply)
       case unknownReply => throw new RuntimeException("boom")
@@ -63,7 +62,7 @@ class Fs2TaskInterpreter(redisHost: InetSocketAddress)(
   private lazy val client: Stream[Task, Socket[Task]] = tcp.client[Task](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
 
   private def sendCommand(chunk: Chunk[Byte]): Task[RedisResponse] = {
-    println(s"sending command $chunk")
+    logger.debug(s"sending command $chunk")
 
     val writeAndRead: (Socket[Task]) => Stream[Task, Vector[Byte]] = { socket =>
       Stream.chunk(chunk).to(socket.writes(Some(2.seconds))).drain.onFinalize(socket.endOfOutput) ++
@@ -83,13 +82,13 @@ class Fs2TaskInterpreter(redisHost: InetSocketAddress)(
           (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg.toArray.map(_.toByte) ++ CRLF
         }
 
-    println(s"command created: ${bytes.result().toVector.asString}")
+    logger.debug(s"command created: ${bytes.result().toVector.asString}")
 
     Chunk.bytes(bytes.result().toArray)
   }
 }
 
-object RedisResponseHandler {
+object RedisResponseHandler extends StrictLogging {
   import RedisConstants._
 
   type ByteVectorState[A] = StateT[Id, Vector[Byte], A]
@@ -101,7 +100,7 @@ object RedisResponseHandler {
   case class ErrorReply(errorMessage: String) extends RedisResponse
 
   def handleResponse(bytes: Vector[Byte]): RedisResponse = {
-    println(s"handle response: ${bytes.asString}")
+    logger.debug(s"handle response: ${bytes.asString}")
     val messageBytes = bytes.tail
     val result = bytes.head match {
       case PLUS_BYTE =>
@@ -117,7 +116,7 @@ object RedisResponseHandler {
       case b =>
         throw new RuntimeException("Unknown reply: " + b.toChar)
     }
-    println(s"response: $result")
+    logger.debug(s"response: $result")
     result
   }
 

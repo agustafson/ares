@@ -2,13 +2,13 @@ package ares
 
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
+import java.util.concurrent.{ExecutorService, Executors}
 
 import ares.RedisCommands._
-import ares.interpreter.Fs2TaskInterpreter
-import cats.{Monad, RecursiveTailRecM}
-import cats.free._
-import fs2.{Strategy, Task}
+import ares.interpreter.Fs2Interpreter
+import cats.RecursiveTailRecM
 import fs2.interop.cats.monadToCats
+import fs2.{Strategy, Task}
 import org.scalacheck.{Gen, Prop, Properties}
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
@@ -19,10 +19,11 @@ class RedisTest extends Specification with ScalaCheck {
 
   trait RedisClientScope extends Scope {
     private val threadName: String = "redis.threadfactory"
-    val strategy = Strategy.fromFixedDaemonPool(8, threadName)
-    val acg = AsynchronousChannelGroup.withFixedThreadPool(8, Strategy.daemonThreadFactory(threadName))
+    private val executor: ExecutorService = Executors.newFixedThreadPool(8, Strategy.daemonThreadFactory(threadName))
+    implicit val strategy = Strategy.fromExecutor(executor)
+    implicit val acg = AsynchronousChannelGroup.withThreadPool(executor)
 
-    lazy val jInt = new Fs2TaskInterpreter(new InetSocketAddress("127.0.0.1", 6379))(acg, strategy)
+    val jInt = new Fs2Interpreter[Task](new InetSocketAddress("127.0.0.1", 6379))
 
     def runCommand[T](op: ops.CommandOp[T]): T = {
       jInt.run(op).unsafeRun()

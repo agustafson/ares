@@ -15,13 +15,28 @@ class Fs2DatabaseInterpreter[F[_]: Functor](redisHost: InetSocketAddress)(implic
     with StrictLogging {
 
   override def select(databaseIndex: Int): F[Either[ErrorReply, Unit]] = {
-    logger.info(s"using database $databaseIndex")
+    logger.info(s"Selecting database $databaseIndex")
 
-    runCommand(createCommand(s"select -1")) {
+    runCommand(createCommand(s"select $databaseIndex")) {
       case SimpleStringReply("OK") => Right(())
       case errorReply: ErrorReply  => Left(errorReply)
       case unknownReply            => throw new RuntimeException("boom")
     }
   }
 
+  override def flushdb: F[ErrorReplyOrUnit] = {
+    logger.info(s"Flushing db")
+
+    val commandName = getOpName(DatabaseCommands.DatabaseCommand.Flushdb())
+    runCommand(createCommand(commandName)) {
+      case SimpleStringReply("OK") => Right(())
+      case errorReply: ErrorReply  => Left(errorReply)
+      case unknownReply            => throw new RuntimeException("boom")
+    }
+  }
+
+  private def getOpName[T, C <: DatabaseCommands.DatabaseCommand[_]](op: C): String = {
+    val className: String = op.getClass.getName
+    className.substring(className.lastIndexOf('$') + 1).toLowerCase
+  }
 }

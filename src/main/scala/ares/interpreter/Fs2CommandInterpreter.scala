@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
 
 import ares._
+import ares.interpreter.ArgConverters.stringArgConverter
 import cats.Functor
 import com.typesafe.scalalogging.StrictLogging
 import fs2.util.Async
@@ -14,18 +15,18 @@ class Fs2CommandInterpreter[F[_]: Functor](redisHost: InetSocketAddress)(implici
     with RedisCommands.Interp[F]
     with StrictLogging {
 
-  override def get(key: String): F[Option[String]] = {
+  override def get(key: String): F[Option[Vector[Byte]]] = {
     runCommand(createCommand("GET", key)) {
       case reply: BulkReply =>
         logger.debug(s"the get reply is: $reply")
-        reply.body.map(_.asString)
+        reply.body
       case error: ErrorReply =>
         Some(error.errorMessage)
       case unknownReply => throw new RuntimeException("boom")
     }
   }
 
-  override def set(key: String, value: String): F[Either[ErrorReply, Unit]] = {
+  override def set(key: String, value: Vector[Byte]): F[Either[ErrorReply, Unit]] = {
     runCommand(createCommand("SET", key, value)) {
       case SimpleStringReply("OK") => Right(())
       case errorReply: ErrorReply  => Left(errorReply)

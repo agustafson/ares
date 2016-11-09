@@ -12,6 +12,8 @@ trait DatabaseCommands {
 
   type DatabaseOp[T] = Free[DatabaseCommand, T]
 
-  def select(databaseIndex: Int): DatabaseOp[Either[ErrorReply, Unit]]
+  def select(databaseIndex: Int): DatabaseOp[ErrorReplyOrUnit]
+
+  def flushdb: DatabaseOp[ErrorReplyOrUnit]
 
 }

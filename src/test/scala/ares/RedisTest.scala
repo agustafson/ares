@@ -10,12 +10,14 @@ import ares.interpreter.{Fs2CommandInterpreter, Fs2DatabaseInterpreter}
 import cats.RecursiveTailRecM
 import fs2.interop.cats.monadToCats
 import fs2.{Strategy, Task}
-import org.scalacheck.{Gen, Prop, Properties}
+import org.scalacheck.Properties
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
 class RedisTest extends Specification with ScalaCheck {
+  sequential
+
   implicit lazy val taskRecursiveTailRecM = new RecursiveTailRecM[Task] {}
   val databaseCounter                     = new AtomicInteger(0)
 
@@ -28,30 +30,36 @@ class RedisTest extends Specification with ScalaCheck {
     val redisHost: InetSocketAddress = new InetSocketAddress("127.0.0.1", 6379)
     val commandInterpreter           = new Fs2CommandInterpreter[Task](redisHost)
 
-    val databaseIndex                                     = databaseCounter.getAndIncrement()
     val databaseInterpreter: Fs2DatabaseInterpreter[Task] = new Fs2DatabaseInterpreter[Task](redisHost)
-    databaseInterpreter.select(databaseIndex).unsafeRun()
 
     def runCommand[T](op: ops.CommandOp[T]): T = {
       commandInterpreter.run(op).unsafeRun()
     }
+
+    def selectNewDatabase: ErrorReplyOrUnit = {
+      val databaseIndex = databaseCounter.getAndIncrement()
+      databaseInterpreter.select(databaseIndex).unsafeRun
+    }
+
+    def flushdb: ErrorReplyOrUnit = {
+      databaseInterpreter.flushdb.unsafeRun()
+    }
   }
 
   val p1: Properties = new Properties("send and receive content") with RedisClientScope {
-    property("get unknown key returns None") = Prop.forAllNoShrink(Gen.const("helloworld")) { (key: String) =>
+    "get unknown key returns None" >> prop { (key: String) =>
       runCommand(ops.get(key)) === None
-    }
+    }.beforeAfter(selectNewDatabase, flushdb)
 
-    property("get unknown key returns None") = Prop.forAllNoShrink(Gen.const("foo"), Gen.const("bar")) {
-      (key: String, value: String) =>
-        val command = for {
-          setResult <- ops.set(key, value)
-          getResult <- ops.get(key)
-        } yield (setResult, getResult)
-        val (setResult, getResult) = runCommand(command)
-        setResult === Right(())
-        getResult === Some(value)
-    }
+    "set and then get returns same value" >> prop { (key: String, value: Vector[Byte]) =>
+      val command = for {
+        setResult <- ops.set(key, value)
+        getResult <- ops.get(key)
+      } yield (setResult, getResult)
+      val (setResult, getResult) = runCommand(command)
+      setResult === Right(())
+      getResult === Some(value)
+    }.beforeAfter(selectNewDatabase, flushdb)
 
   }
 

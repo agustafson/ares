@@ -12,8 +12,8 @@ trait RedisCommands {
 
   type CommandOp[A] = Free[Command, A]
 
-  def get(key: String): CommandOp[Option[String]]
+  def get(key: String): CommandOp[Option[Vector[Byte]]]
 
-  def set(key: String, value: String): CommandOp[Either[ErrorReply, Unit]]
+  def set(key: String, value: Vector[Byte]): CommandOp[ErrorReplyOrUnit]
 
 }

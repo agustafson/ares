@@ -27,12 +27,12 @@ abstract class BaseFs2Interpreter[F[_]: Functor](redisHost: InetSocketAddress)(i
     sendCommand(command).map(responseHandler)
   }
 
-  protected def createCommand(command: String, args: String*): Chunk[Byte] = {
+  protected def createCommand(command: String, args: Vector[Byte]*): Chunk[Byte] = {
     val bytes = new mutable.ListBuffer() +=
         ASTERISK_BYTE ++= intCrlf(args.length + 1) +=
         DOLLAR_BYTE ++= intCrlf(command.length) ++=
         command.toArray.map(_.toByte) ++= CRLF ++=
-        args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg.toArray.map(_.toByte) ++ CRLF)
+        args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
 
     logger.debug(s"command created: ${bytes.result().toVector.asString}")
 

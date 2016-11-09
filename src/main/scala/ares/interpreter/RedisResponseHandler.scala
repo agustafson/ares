@@ -6,6 +6,7 @@ import cats.data.StateT
 import com.typesafe.scalalogging.StrictLogging
 
 object RedisResponseHandler extends StrictLogging {
+
   import RedisConstants._
 
   type ByteVectorState[A] = StateT[Id, Vector[Byte], A]
@@ -53,13 +54,14 @@ object RedisResponseHandler extends StrictLogging {
     ErrorReply(takeLine.runA(bytes).asString)
   }
 
-
-  private val takeLine: ByteVectorState[Vector[Byte]] = StateT[Id, Vector[Byte], Vector[Byte]] { bytes =>
-    val crlfIndex = bytes.indexOfSlice(CRLF)
-    val (firstLine, remainingBytes) = bytes.splitAt(crlfIndex)
-    (remainingBytes.drop(2), firstLine)
-  }
+  private val takeLine: ByteVectorState[Vector[Byte]] =
+    StateT[Id, Vector[Byte], Vector[Byte]] { bytes =>
+      val crlfIndex                   = bytes.indexOfSlice(CRLF)
+      val (firstLine, remainingBytes) = bytes.splitAt(crlfIndex)
+      (remainingBytes.drop(2), firstLine)
+    }
 
   private val getIntegerLine: ByteVectorState[Long] =
     takeLine.map(bytes => bytes.map(_.toChar).mkString.toLong)
+
 }

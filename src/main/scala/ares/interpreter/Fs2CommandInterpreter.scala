@@ -8,8 +8,11 @@ import cats.Functor
 import com.typesafe.scalalogging.StrictLogging
 import fs2.util.Async
 
-class Fs2CommandInterpreter[F[_] : Functor](redisHost: InetSocketAddress)(implicit asyncM: Async[F], tcpACG: AsynchronousChannelGroup)
-  extends BaseFs2Interpreter[F](redisHost) with RedisCommands.Interp[F] with StrictLogging {
+class Fs2CommandInterpreter[F[_]: Functor](redisHost: InetSocketAddress)(implicit asyncM: Async[F],
+                                                                         tcpACG: AsynchronousChannelGroup)
+    extends BaseFs2Interpreter[F](redisHost)
+    with RedisCommands.Interp[F]
+    with StrictLogging {
 
   override def get(key: String): F[Option[String]] = {
     runCommand(createCommand("GET", key)) {
@@ -25,10 +28,9 @@ class Fs2CommandInterpreter[F[_] : Functor](redisHost: InetSocketAddress)(implic
   override def set(key: String, value: String): F[Either[ErrorReply, Unit]] = {
     runCommand(createCommand("SET", key, value)) {
       case SimpleStringReply("OK") => Right(())
-      case errorReply: ErrorReply => Left(errorReply)
-      case unknownReply => throw new RuntimeException("boom")
+      case errorReply: ErrorReply  => Left(errorReply)
+      case unknownReply            => throw new RuntimeException("boom")
     }
   }
 
 }
-

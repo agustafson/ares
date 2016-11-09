@@ -17,19 +17,18 @@ import org.specs2.specification.Scope
 
 class RedisTest extends Specification with ScalaCheck {
   implicit lazy val taskRecursiveTailRecM = new RecursiveTailRecM[Task] {}
-  val databaseCounter = new AtomicInteger(0)
+  val databaseCounter                     = new AtomicInteger(0)
 
   trait RedisClientScope extends Scope {
-    private val threadName: String = "redis.threadfactory"
-    private val executor: ExecutorService = Executors.newFixedThreadPool(8, Strategy.daemonThreadFactory(threadName))
-    implicit val strategy = Strategy.fromExecutor(executor)
-    implicit val acg = AsynchronousChannelGroup.withThreadPool(executor)
+    val threadName: String        = "redis.threadfactory"
+    val executor: ExecutorService = Executors.newFixedThreadPool(8, Strategy.daemonThreadFactory(threadName))
+    implicit val strategy         = Strategy.fromExecutor(executor)
+    implicit val acg              = AsynchronousChannelGroup.withThreadPool(executor)
 
-    val databaseIndex = databaseCounter.getAndIncrement()
+    val redisHost: InetSocketAddress = new InetSocketAddress("127.0.0.1", 6379)
+    val commandInterpreter           = new Fs2CommandInterpreter[Task](redisHost)
 
-    private val redisHost: InetSocketAddress = new InetSocketAddress("127.0.0.1", 6379)
-    val commandInterpreter = new Fs2CommandInterpreter[Task](redisHost)
-
+    val databaseIndex                                     = databaseCounter.getAndIncrement()
     val databaseInterpreter: Fs2DatabaseInterpreter[Task] = new Fs2DatabaseInterpreter[Task](redisHost)
     databaseInterpreter.select(databaseIndex).unsafeRun()
 
@@ -43,14 +42,15 @@ class RedisTest extends Specification with ScalaCheck {
       runCommand(ops.get(key)) === None
     }
 
-    property("get unknown key returns None") = Prop.forAllNoShrink(Gen.const("foo"), Gen.const("bar")) { (key: String, value: String) =>
-      val command = for {
-        setResult <- ops.set(key, value)
-        getResult <- ops.get(key)
-      } yield (setResult, getResult)
-      val (setResult, getResult) = runCommand(command)
-      setResult === Right(())
-      getResult === Some(value)
+    property("get unknown key returns None") = Prop.forAllNoShrink(Gen.const("foo"), Gen.const("bar")) {
+      (key: String, value: String) =>
+        val command = for {
+          setResult <- ops.set(key, value)
+          getResult <- ops.get(key)
+        } yield (setResult, getResult)
+        val (setResult, getResult) = runCommand(command)
+        setResult === Right(())
+        getResult === Some(value)
     }
 
   }

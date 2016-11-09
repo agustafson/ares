@@ -1,5 +1,6 @@
 package ares.interpreter
 
+import ares._
 import ares.interpreter.RedisResponseHandler._
 import org.scalacheck.{Gen, Prop, Properties}
 import org.specs2.ScalaCheck

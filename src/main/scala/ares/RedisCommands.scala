@@ -1,7 +1,5 @@
 package ares
 
-import ares.interpreter.RedisResponseHandler.ErrorReply
-import cats._
 import cats.free._
 import freasymonad.cats.free
 

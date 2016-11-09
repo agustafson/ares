@@ -2,10 +2,11 @@ package ares
 
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ExecutorService, Executors}
 
 import ares.RedisCommands._
-import ares.interpreter.Fs2Interpreter
+import ares.interpreter.{Fs2CommandInterpreter, Fs2DatabaseInterpreter}
 import cats.RecursiveTailRecM
 import fs2.interop.cats.monadToCats
 import fs2.{Strategy, Task}
@@ -16,6 +17,7 @@ import org.specs2.specification.Scope
 
 class RedisTest extends Specification with ScalaCheck {
   implicit lazy val taskRecursiveTailRecM = new RecursiveTailRecM[Task] {}
+  val databaseCounter = new AtomicInteger(0)
 
   trait RedisClientScope extends Scope {
     private val threadName: String = "redis.threadfactory"
@@ -23,10 +25,16 @@ class RedisTest extends Specification with ScalaCheck {
     implicit val strategy = Strategy.fromExecutor(executor)
     implicit val acg = AsynchronousChannelGroup.withThreadPool(executor)
 
-    val jInt = new Fs2Interpreter[Task](new InetSocketAddress("127.0.0.1", 6379))
+    val databaseIndex = databaseCounter.getAndIncrement()
+
+    private val redisHost: InetSocketAddress = new InetSocketAddress("127.0.0.1", 6379)
+    val commandInterpreter = new Fs2CommandInterpreter[Task](redisHost)
+
+    val databaseInterpreter: Fs2DatabaseInterpreter[Task] = new Fs2DatabaseInterpreter[Task](redisHost)
+    databaseInterpreter.select(databaseIndex).unsafeRun()
 
     def runCommand[T](op: ops.CommandOp[T]): T = {
-      jInt.run(op).unsafeRun()
+      commandInterpreter.run(op).unsafeRun()
     }
   }
 

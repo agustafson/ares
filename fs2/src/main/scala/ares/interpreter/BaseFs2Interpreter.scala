@@ -49,6 +49,4 @@ abstract class BaseFs2Interpreter[F[_]: Functor](redisHost: InetSocketAddress)(i
     client.flatMap(writeAndRead).runFold(Vector.empty[Byte])(_ ++ _).map(RedisResponseHandler.handleResponse)
   }
 
-  private def intCrlf(i: Int): Vector[Byte] =
-    i.toString.toVector.map(_.toByte) ++ CRLF
 }

@@ -9,4 +9,7 @@ object RedisConstants {
   val CR: Byte            = '\r'
   val LF: Byte            = '\n'
   val CRLF: Vector[Byte]  = Vector[Byte](CR, LF)
+
+  def intCrlf(i: Int): Vector[Byte] =
+    i.toString.toVector.map(_.toByte) ++ CRLF
 }

@@ -1,22 +1,18 @@
 package redscaler.interpreter
 
-import java.nio.channels.AsynchronousChannelGroup
-
 import redscaler._
 import redscaler.interpreter.ArgConverters.stringArgConverter
 import redscaler.interpreter.RedisConstants._
-import cats.Functor
-import cats.syntax.functor._
 import com.typesafe.scalalogging.StrictLogging
 import fs2.io.tcp.Socket
-import fs2.util.Async
+import fs2.util.{Applicative, Catchable}
+import fs2.util.syntax._
 import fs2.{Chunk, Stream}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-class Fs2CommandInterpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(implicit asyncM: Async[F],
-                                                                              tcpACG: AsynchronousChannelGroup)
+class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F, Socket[F]])
     extends RedisCommands.Interp[F]
     with StrictLogging {
 

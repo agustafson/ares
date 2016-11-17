@@ -1,4 +1,4 @@
-package ares
+package redscaler
 
 sealed trait RedisResponse
 

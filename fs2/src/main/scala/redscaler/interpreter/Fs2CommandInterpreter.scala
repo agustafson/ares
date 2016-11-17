@@ -1,10 +1,10 @@
-package ares.interpreter
+package redscaler.interpreter
 
 import java.nio.channels.AsynchronousChannelGroup
 
-import ares._
-import ares.interpreter.ArgConverters.stringArgConverter
-import ares.interpreter.RedisConstants._
+import redscaler._
+import redscaler.interpreter.ArgConverters.stringArgConverter
+import redscaler.interpreter.RedisConstants._
 import cats.Functor
 import cats.syntax.functor._
 import com.typesafe.scalalogging.StrictLogging
@@ -17,8 +17,7 @@ import scala.concurrent.duration._
 
 class Fs2CommandInterpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(implicit asyncM: Async[F],
                                                                               tcpACG: AsynchronousChannelGroup)
-    extends BaseFs2Interpreter[F](redisClient)
-    with RedisCommands.Interp[F]
+    extends RedisCommands.Interp[F]
     with StrictLogging {
 
   override def selectDatabase(databaseIndex: Int): F[Either[ErrorReply, Unit]] = {

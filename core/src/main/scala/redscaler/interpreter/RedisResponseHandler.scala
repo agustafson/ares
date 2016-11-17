@@ -1,6 +1,6 @@
-package ares.interpreter
+package redscaler.interpreter
 
-import ares._
+import redscaler._
 import cats._
 import cats.data.StateT
 import com.typesafe.scalalogging.StrictLogging

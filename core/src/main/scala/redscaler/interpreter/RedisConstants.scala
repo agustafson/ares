@@ -1,4 +1,4 @@
-package ares.interpreter
+package redscaler.interpreter
 
 object RedisConstants {
   val DOLLAR_BYTE: Byte   = '$'

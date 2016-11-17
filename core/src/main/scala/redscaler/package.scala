@@ -1,4 +1,4 @@
-package object ares {
+package object redscaler {
 
   type ErrorReplyOrUnit = Either[ErrorReply, Unit]
 

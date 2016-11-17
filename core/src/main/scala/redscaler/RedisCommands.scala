@@ -1,4 +1,4 @@
-package ares
+package redscaler
 
 import cats.free._
 import freasymonad.cats.free

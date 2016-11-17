@@ -1,12 +1,12 @@
-package ares
+package redscaler
 
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ExecutorService, Executors}
 
-import ares.RedisCommands._
-import ares.interpreter.Fs2CommandInterpreter
+import redscaler.RedisCommands._
+import redscaler.interpreter.Fs2CommandInterpreter
 import cats.RecursiveTailRecM
 import fs2.interop.cats.monadToCats
 import fs2.io.tcp

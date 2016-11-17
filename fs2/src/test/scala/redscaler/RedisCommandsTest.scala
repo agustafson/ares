@@ -17,7 +17,7 @@ import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-class RedisTest extends Specification with ScalaCheck {
+class RedisCommandsTest extends Specification with ScalaCheck {
   sequential
 
   implicit lazy val taskRecursiveTailRecM = new RecursiveTailRecM[Task] {}

@@ -69,5 +69,6 @@ lazy val fs2 = project
           "org.specs2"                 %% "specs2-core"       % "3.8.4" % "test",
           "org.specs2"                 %% "specs2-scalacheck" % "3.8.4" % "test"
         )
-      }
+      },
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
     ))

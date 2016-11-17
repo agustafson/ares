@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ExecutorService, Executors}
 
 import ares.RedisCommands._
-import ares.interpreter.{Fs2CommandInterpreter, Fs2DatabaseInterpreter}
+import ares.interpreter.Fs2CommandInterpreter
 import cats.RecursiveTailRecM
 import fs2.interop.cats.monadToCats
 import fs2.io.tcp
@@ -33,8 +33,7 @@ class RedisTest extends Specification with ScalaCheck {
     val redisClient: Stream[Task, Socket[Task]] =
       tcp.client[Task](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
 
-    val commandInterpreter                                = new Fs2CommandInterpreter[Task](redisClient)
-    val databaseInterpreter: Fs2DatabaseInterpreter[Task] = new Fs2DatabaseInterpreter[Task](redisClient)
+    val commandInterpreter = new Fs2CommandInterpreter[Task](redisClient)
 
     def runCommand[T](op: ops.CommandOp[T]): T = {
       commandInterpreter.run(op).unsafeRun()
@@ -42,11 +41,11 @@ class RedisTest extends Specification with ScalaCheck {
 
     def selectNewDatabase: ErrorReplyOrUnit = {
       val databaseIndex = databaseCounter.getAndIncrement()
-      databaseInterpreter.select(databaseIndex).unsafeRun
+      commandInterpreter.selectDatabase(databaseIndex).unsafeRun
     }
 
     def flushdb: ErrorReplyOrUnit = {
-      databaseInterpreter.flushdb.unsafeRun()
+      commandInterpreter.flushdb.unsafeRun()
     }
   }
 

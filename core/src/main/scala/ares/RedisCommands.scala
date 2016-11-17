@@ -16,4 +16,8 @@ trait RedisCommands {
 
   def set(key: String, value: Vector[Byte]): CommandOp[ErrorReplyOrUnit]
 
+  def selectDatabase(databaseIndex: Int): CommandOp[ErrorReplyOrUnit]
+
+  def flushdb: CommandOp[ErrorReplyOrUnit]
+
 }

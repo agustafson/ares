@@ -1,17 +1,18 @@
 package ares.interpreter
 
-import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
 
 import ares._
 import cats.Functor
 import cats.syntax.functor._
 import com.typesafe.scalalogging.StrictLogging
+import fs2.Stream
+import fs2.io.tcp.Socket
 import fs2.util.Async
 
-class Fs2DatabaseInterpreter[F[_]: Functor](redisHost: InetSocketAddress)(implicit asyncM: Async[F],
-                                                                          tcpACG: AsynchronousChannelGroup)
-    extends BaseFs2Interpreter[F](redisHost)
+class Fs2DatabaseInterpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(implicit asyncM: Async[F],
+                                                                               tcpACG: AsynchronousChannelGroup)
+    extends BaseFs2Interpreter[F](redisClient)
     with DatabaseCommands.Interp[F]
     with StrictLogging {
 

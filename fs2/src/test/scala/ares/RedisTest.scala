@@ -9,7 +9,9 @@ import ares.RedisCommands._
 import ares.interpreter.{Fs2CommandInterpreter, Fs2DatabaseInterpreter}
 import cats.RecursiveTailRecM
 import fs2.interop.cats.monadToCats
-import fs2.{Strategy, Task}
+import fs2.io.tcp
+import fs2.io.tcp._
+import fs2.{Strategy, Stream, Task}
 import org.scalacheck.Properties
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
@@ -28,9 +30,11 @@ class RedisTest extends Specification with ScalaCheck {
     implicit val acg              = AsynchronousChannelGroup.withThreadPool(executor)
 
     val redisHost: InetSocketAddress = new InetSocketAddress("127.0.0.1", 6379)
-    val commandInterpreter           = new Fs2CommandInterpreter[Task](redisHost)
+    val redisClient: Stream[Task, Socket[Task]] =
+      tcp.client[Task](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
 
-    val databaseInterpreter: Fs2DatabaseInterpreter[Task] = new Fs2DatabaseInterpreter[Task](redisHost)
+    val commandInterpreter                                = new Fs2CommandInterpreter[Task](redisClient)
+    val databaseInterpreter: Fs2DatabaseInterpreter[Task] = new Fs2DatabaseInterpreter[Task](redisClient)
 
     def runCommand[T](op: ops.CommandOp[T]): T = {
       commandInterpreter.run(op).unsafeRun()

@@ -8,7 +8,6 @@ import ares.interpreter.RedisConstants._
 import cats.Functor
 import cats.syntax.functor._
 import com.typesafe.scalalogging.StrictLogging
-import fs2.io.tcp
 import fs2.io.tcp.Socket
 import fs2.util.Async
 import fs2.{Chunk, Stream}
@@ -16,12 +15,9 @@ import fs2.{Chunk, Stream}
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-abstract class BaseFs2Interpreter[F[_]: Functor](redisHost: InetSocketAddress)(implicit asyncM: Async[F],
-                                                                               tcpACG: AsynchronousChannelGroup)
+abstract class BaseFs2Interpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(implicit asyncM: Async[F],
+                                                                                    tcpACG: AsynchronousChannelGroup)
     extends StrictLogging {
-
-  private lazy val client: Stream[F, Socket[F]] =
-    tcp.client[F](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
 
   protected def runCommand[T](command: String, args: Vector[Byte]*): F[RedisResponse] = {
     sendCommand(createCommand(command, args: _*))
@@ -46,7 +42,7 @@ abstract class BaseFs2Interpreter[F[_]: Functor](redisHost: InetSocketAddress)(i
       Stream.chunk(chunk).to(socket.writes(Some(2.seconds))).drain.onFinalize(socket.endOfOutput) ++
         socket.reads(1024, Some(2.seconds)).chunks.map(_.toVector)
     }
-    client.flatMap(writeAndRead).runFold(Vector.empty[Byte])(_ ++ _).map(RedisResponseHandler.handleResponse)
+    redisClient.flatMap(writeAndRead).runFold(Vector.empty[Byte])(_ ++ _).map(RedisResponseHandler.handleResponse)
   }
 
 }

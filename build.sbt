@@ -68,17 +68,8 @@ lazy val core = project
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
     ))
 
-lazy val macros = project
-  .dependsOn(core)
-  .settings(baseSettings)
-  .settings(scalacSettings)
-  .settings(
-    Seq(
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-    ))
-
 lazy val fs2 = project
-  .dependsOn(core, macros)
+  .dependsOn(core)
   .settings(baseSettings)
   .settings(scalacSettings)
   .settings(

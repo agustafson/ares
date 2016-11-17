@@ -6,6 +6,7 @@ import java.nio.channels.AsynchronousChannelGroup
 import ares._
 import ares.interpreter.ArgConverters.stringArgConverter
 import cats.Functor
+import cats.syntax.functor._
 import com.typesafe.scalalogging.StrictLogging
 import fs2.util.Async
 
@@ -16,7 +17,7 @@ class Fs2CommandInterpreter[F[_]: Functor](redisHost: InetSocketAddress)(implici
     with StrictLogging {
 
   override def get(key: String): F[Option[Vector[Byte]]] = {
-    runCommand(createCommand("GET", key)) {
+    runCommand("GET", key).map {
       case reply: BulkReply =>
         logger.debug(s"the get reply is: $reply")
         reply.body
@@ -27,7 +28,7 @@ class Fs2CommandInterpreter[F[_]: Functor](redisHost: InetSocketAddress)(implici
   }
 
   override def set(key: String, value: Vector[Byte]): F[Either[ErrorReply, Unit]] = {
-    runCommand(createCommand("SET", key, value)) {
+    runCommand("SET", key, value).map {
       case SimpleStringReply("OK") => Right(())
       case errorReply: ErrorReply  => Left(errorReply)
       case unknownReply            => throw new RuntimeException("boom")

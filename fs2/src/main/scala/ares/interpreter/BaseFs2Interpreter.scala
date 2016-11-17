@@ -23,11 +23,11 @@ abstract class BaseFs2Interpreter[F[_]: Functor](redisHost: InetSocketAddress)(i
   private lazy val client: Stream[F, Socket[F]] =
     tcp.client[F](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
 
-  protected def runCommand[T](command: Chunk[Byte])(responseHandler: RedisResponse => T): F[T] = {
-    sendCommand(command).map(responseHandler)
+  protected def runCommand[T](command: String, args: Vector[Byte]*): F[RedisResponse] = {
+    sendCommand(createCommand(command, args: _*))
   }
 
-  protected def createCommand(command: String, args: Vector[Byte]*): Chunk[Byte] = {
+  private def createCommand(command: String, args: Vector[Byte]*): Chunk[Byte] = {
     val bytes = new mutable.ListBuffer() +=
         ASTERISK_BYTE ++= intCrlf(args.length + 1) +=
         DOLLAR_BYTE ++= intCrlf(command.length) ++=

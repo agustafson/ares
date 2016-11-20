@@ -18,15 +18,23 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
   val readTimeout  = Some(2.seconds)
   val maxBytesRead = 1024
 
-  protected def runCommand[T](command: String, args: Vector[Byte]*): F[RedisResponse] = {
-    sendCommand(createCommand(command, args: _*))
+  protected def runKeyCommand(command: String, key: String, args: Vector[Byte]*): F[RedisResponse] = {
+    runCommand(command, stringArgConverter(key) +: args)
   }
 
-  protected def streamCommand(command: String, args: Vector[Byte]*): Stream[F, RedisResponse] = {
-    streamCommandResults(createCommand(command, args: _*)).map(RedisResponseHandler.handleResponse)
+  protected def runNoArgCommand(command: String): F[RedisResponse] = {
+    runCommand(command, Seq.empty)
   }
 
-  private def createCommand(command: String, args: Vector[Byte]*): Chunk[Byte] = {
+  protected def runCommand[T](command: String, args: Seq[Vector[Byte]]): F[RedisResponse] = {
+    sendCommand(createCommand(command, args))
+  }
+
+  protected def streamCommand(command: String, args: Seq[Vector[Byte]]): Stream[F, RedisResponse] = {
+    streamCommandResults(createCommand(command, args)).map(RedisResponseHandler.handleResponse)
+  }
+
+  private def createCommand(command: String, args: Seq[Vector[Byte]]): Chunk[Byte] = {
     val bytes = new mutable.ListBuffer() +=
         ASTERISK_BYTE ++= intCrlf(args.length + 1) +=
         DOLLAR_BYTE ++= intCrlf(command.length) ++=

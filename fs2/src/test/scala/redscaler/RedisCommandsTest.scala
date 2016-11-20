@@ -1,8 +1,9 @@
 package redscaler
 
+import cats.data.NonEmptyList
 import fs2.Task
 import fs2.interop.cats.monadToCats
-import org.scalacheck.{Gen, Properties}
+import org.scalacheck.{Arbitrary, Gen, Properties}
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import redscaler.RedisCommands._
@@ -10,6 +11,9 @@ import redscaler.interpreter.Fs2CommandInterpreter
 
 class RedisCommandsTest extends Specification with ScalaCheck {
   sequential
+
+  val nonEmptyStringGen: Gen[String] = Gen.alphaStr.suchThat(_.trim.nonEmpty)
+  val byteVectorGen: Gen[Vector[Byte]] = Arbitrary.arbContainer[Vector, Byte].arbitrary
 
   trait RedisCommandsScope extends RedisClientScope {
     val commandInterpreter = new Fs2CommandInterpreter[Task](redisClient)
@@ -52,10 +56,10 @@ class RedisCommandsTest extends Specification with ScalaCheck {
       runCommand(ops.lrange(key, startIndex, endIndex)) ==== Right(List.empty)
     }
 
-    "rpush single item and lrange" >> prop { (key: String, value: String) =>
+    "rpush single item and lrange" >> prop { (key: String, value: Vector[Byte]) =>
       val op =
         for {
-          count <- ops.rpush(key, value)
+          count <- ops.rpush(key, NonEmptyList.of(value))
           result <- ops.lrange(key, 0, -1)
         } yield (count, result)
       val (count, result) = runCommand(op)
@@ -63,8 +67,57 @@ class RedisCommandsTest extends Specification with ScalaCheck {
       result ==== Right(List(value))
     }
       .noShrink
-      .setGens(Gen.alphaStr.suchThat(_.trim.nonEmpty), Gen.alphaStr)
+      .setGens(nonEmptyStringGen, byteVectorGen)
       .beforeAfter(selectNewDatabase, flushdb)
+
+    "rpush multiple items and lrange" >> prop { (key: String, value1: Vector[Byte], value2: Vector[Byte]) =>
+      val op =
+        for {
+          count1 <- ops.rpush(key, NonEmptyList.of(value1))
+          count2 <- ops.rpush(key, NonEmptyList.of(value2))
+          result <- ops.lrange(key, 0, -1)
+        } yield (count1, count2, result)
+      val (count1, count2, result) = runCommand(op)
+      count1 ==== Right(1)
+      count2 ==== Right(2)
+      result ==== Right(List(value1, value2))
+    }
+      .noShrink
+      .setGens(nonEmptyStringGen, byteVectorGen, byteVectorGen)
+      .beforeAfter(selectNewDatabase, flushdb)
+
+    "lpush multiple items and lrange" >> prop { (key: String, value1: Vector[Byte], value2: Vector[Byte]) =>
+      val op =
+        for {
+          count1 <- ops.lpush(key, NonEmptyList.of(value1))
+          count2 <- ops.lpush(key, NonEmptyList.of(value2))
+          result <- ops.lrange(key, 0, -1)
+        } yield (count1, count2, result)
+      val (count1, count2, result) = runCommand(op)
+      count1 ==== Right(1)
+      count2 ==== Right(2)
+      result ==== Right(List(value2, value1))
+    }
+      .noShrink
+      .setGens(nonEmptyStringGen, byteVectorGen, byteVectorGen)
+      .beforeAfter(selectNewDatabase, flushdb)
+
+    "lpush and rpush multiple items and lrange" >> prop { (key: String, leftValues: List[Vector[Byte]], rightValues: List[Vector[Byte]]) =>
+      val op =
+        for {
+          count1 <- ops.rpush(key, NonEmptyList.fromList(rightValues).get)
+          count2 <- ops.lpush(key, NonEmptyList.fromList(leftValues).get)
+          result <- ops.lrange(key, 0, -1)
+        } yield (count1, count2, result)
+      val (count1, count2, result) = runCommand(op)
+      count1 ==== Right(rightValues.size)
+      count2 ==== Right(leftValues.size + rightValues.size)
+      result ==== Right(leftValues.reverse ++ rightValues)
+    }
+      .noShrink
+      .setGens(nonEmptyStringGen, Gen.nonEmptyListOf(byteVectorGen), Gen.nonEmptyListOf(byteVectorGen))
+      .beforeAfter(selectNewDatabase, flushdb)
+
   }
 
   s2"List operations$p2"

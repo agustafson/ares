@@ -16,7 +16,7 @@ class Fs2PubSubInterpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(imp
     with PubSub.Interp[F] {
 
   override def publish(channelName: String, message: Vector[Byte]): F[Int] = {
-    runCommand("publish", channelName, message).map {
+    runKeyCommand("publish", channelName, message).map {
       case IntegerReply(receiverCount) => receiverCount.toInt
       case reply                       => throw new RuntimeException("boom")
     }

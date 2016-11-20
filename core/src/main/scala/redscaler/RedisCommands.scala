@@ -1,5 +1,6 @@
 package redscaler
 
+import cats.data.NonEmptyList
 import cats.free._
 import freasymonad.cats.free
 
@@ -16,11 +17,11 @@ trait RedisCommands {
 
   def set(key: String, value: Vector[Byte]): CommandOp[ErrorReplyOr[Unit]]
 
-  def lpush(key: String, value: String): CommandOp[ErrorReplyOr[Int]]
+  def lpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
 
-  def rpush(key: String, value: String): CommandOp[ErrorReplyOr[Int]]
+  def rpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
 
-  def lrange(key: String, startIndex: Int, endIndex: Int): CommandOp[ErrorReplyOr[List[String]]]
+  def lrange(key: String, startIndex: Int, endIndex: Int): CommandOp[ErrorReplyOr[List[Vector[Byte]]]]
 
   def selectDatabase(databaseIndex: Int): CommandOp[ErrorReplyOr[Unit]]
 

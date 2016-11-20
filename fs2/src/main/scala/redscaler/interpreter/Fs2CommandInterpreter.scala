@@ -51,8 +51,20 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
     })
   }
 
+  override def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
+    runKeyCommand("LPUSHX", key, values.toList:_*).map(handleReplyWithErrorHandling {
+      case IntegerReply(count) => count.toInt
+    })
+  }
+
   override def rpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
     runKeyCommand("RPUSH", key, values.toList:_*).map(handleReplyWithErrorHandling {
+      case IntegerReply(count) => count.toInt
+    })
+  }
+
+  override def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
+    runKeyCommand("RPUSHX", key, values.toList:_*).map(handleReplyWithErrorHandling {
       case IntegerReply(count) => count.toInt
     })
   }

@@ -19,7 +19,11 @@ trait RedisCommands {
 
   def lpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
 
+  def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
+
   def rpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
+
+  def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
 
   def lrange(key: String, startIndex: Int, endIndex: Int): CommandOp[ErrorReplyOr[List[Vector[Byte]]]]
 

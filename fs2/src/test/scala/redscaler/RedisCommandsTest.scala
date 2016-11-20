@@ -7,7 +7,7 @@ import org.scalacheck.{Arbitrary, Gen, Properties}
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import redscaler.RedisCommands._
-import redscaler.interpreter.Fs2CommandInterpreter
+import redscaler.interpreter.{ArgConverters, Fs2CommandInterpreter}
 
 class RedisCommandsTest extends Specification with ScalaCheck {
   sequential
@@ -116,6 +116,42 @@ class RedisCommandsTest extends Specification with ScalaCheck {
     }
       .noShrink
       .setGens(nonEmptyStringGen, Gen.nonEmptyListOf(byteVectorGen), Gen.nonEmptyListOf(byteVectorGen))
+      .beforeAfter(selectNewDatabase, flushdb)
+
+    "lpushx single item and lrange" >> prop { (key: String, value: Vector[Byte]) =>
+      val wibble: Vector[Byte] = ArgConverters.stringArgConverter("wibble")
+      val op =
+        for {
+          count1 <- ops.lpushx(key, NonEmptyList.of(value))
+          _ <- ops.lpush(key, NonEmptyList.of(wibble))
+          count2 <- ops.lpushx(key, NonEmptyList.of(value))
+          result <- ops.lrange(key, 0, -1)
+        } yield (count1, count2, result)
+      val (count1, count2, result) = runCommand(op)
+      count1 ==== Right(0)
+      count2 ==== Right(2)
+      result ==== Right(List(value, wibble))
+    }
+      .noShrink
+      .setGens(nonEmptyStringGen, byteVectorGen)
+      .beforeAfter(selectNewDatabase, flushdb)
+
+    "rpushx single item and lrange" >> prop { (key: String, value: Vector[Byte]) =>
+      val wibble: Vector[Byte] = ArgConverters.stringArgConverter("wibble")
+      val op =
+        for {
+          count1 <- ops.rpushx(key, NonEmptyList.of(value))
+          _ <- ops.rpush(key, NonEmptyList.of(wibble))
+          count2 <- ops.rpushx(key, NonEmptyList.of(value))
+          result <- ops.lrange(key, 0, -1)
+        } yield (count1, count2, result)
+      val (count1, count2, result) = runCommand(op)
+      count1 ==== Right(0)
+      count2 ==== Right(2)
+      result ==== Right(List(wibble, value))
+    }
+      .noShrink
+      .setGens(nonEmptyStringGen, byteVectorGen)
       .beforeAfter(selectNewDatabase, flushdb)
 
   }

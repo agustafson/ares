@@ -11,10 +11,17 @@ class PubSubTest extends Specification {
     val subscriber: Fs2PubSubInterpreter[Task] = new Fs2PubSubInterpreter[Task](redisClient)
   }
 
-  "pub/sub" in new PubSubScope {
+  "publish with no subscribers" in new PubSubScope {
     val channelName   = "heyhey"
     val receiverCount = publisher.publish(channelName, "Hello").unsafeRun()
     receiverCount === 0
+  }
+
+  "subscribe to published message" in new PubSubScope {
+    val channelName      = "heyhey2"
+    val subscribedStream = subscriber.subscribe(channelName).unsafeRun()
+    val receiverCount    = publisher.publish(channelName, "Hello").unsafeRun()
+    receiverCount === 1
   }
 
 }

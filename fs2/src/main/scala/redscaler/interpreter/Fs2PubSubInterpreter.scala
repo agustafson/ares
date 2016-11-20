@@ -22,7 +22,10 @@ class Fs2PubSubInterpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(imp
     }
   }
 
-  override def subscribe(channel: String): F[Stream[Nothing, SubscriberMessage]] = ???
+  override def subscribe(channelName: String): F[Stream[Nothing, SubscriberMessage]] = {
+    //streamCommand("subscribe", channelName)
+    ???
+  }
 
-  override def unsubscribe(channel: String): F[Unit] = ???
+  override def unsubscribe(channelName: String): F[Unit] = ???
 }

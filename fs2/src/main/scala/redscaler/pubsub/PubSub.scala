@@ -11,10 +11,10 @@ trait PubSub {
 
   type PubSubIO[A] = Free[PubSubOp, A]
 
-  def publish(channel: String, message: Vector[Byte]): PubSubIO[Int]
+  def publish(channelName: String, message: Vector[Byte]): PubSubIO[Int]
 
-  def subscribe(channel: String): PubSubIO[Stream[Nothing, SubscriberMessage]]
+  def subscribe(channelName: String): PubSubIO[Stream[Nothing, SubscriberMessage]]
 
-  def unsubscribe(channel: String): PubSubIO[Unit]
+  def unsubscribe(channelName: String): PubSubIO[Unit]
 
 }

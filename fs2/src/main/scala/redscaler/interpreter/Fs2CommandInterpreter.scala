@@ -6,50 +6,69 @@ import fs2.io.tcp.Socket
 import fs2.util.syntax._
 import fs2.util.{Applicative, Catchable}
 import redscaler._
-import redscaler.interpreter.ArgConverters.stringArgConverter
+import redscaler.interpreter.ArgConverters._
 
 class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F, Socket[F]])
     extends CommandExecutor[F](redisClient)
     with RedisCommands.Interp[F]
     with StrictLogging {
 
-  override def selectDatabase(databaseIndex: Int): F[Either[ErrorReply, Unit]] = {
+  type Result[A] = F[ErrorReplyOr[A]]
+
+  override def selectDatabase(databaseIndex: Int): Result[Unit] = {
     logger.info(s"Selecting database $databaseIndex")
 
-    runCommand(s"select $databaseIndex").map {
-      case SimpleStringReply("OK") => Right(())
-      case errorReply: ErrorReply  => Left(errorReply)
-      case unknownReply            => throw new RuntimeException("boom")
-    }
+    runCommand(s"select $databaseIndex").map(handleReplyWithErrorHandling {
+      case SimpleStringReply("OK") => ()
+    })
   }
 
-  override def flushdb: F[ErrorReplyOrUnit] = {
+  override def flushdb: Result[Unit] = {
     logger.info(s"Flushing db")
 
-    runCommand("flushdb").map {
-      case SimpleStringReply("OK") => Right(())
-      case errorReply: ErrorReply  => Left(errorReply)
-      case unknownReply            => throw new RuntimeException("boom")
-    }
+    runCommand("flushdb").map(handleReplyWithErrorHandling {
+      case SimpleStringReply("OK") => ()
+    })
   }
 
-  override def get(key: String): F[Option[Vector[Byte]]] = {
-    runCommand("GET", key).map {
-      case reply: BulkReply =>
-        logger.debug(s"the get reply is: $reply")
-        reply.body
-      case error: ErrorReply =>
-        Some(error.errorMessage)
-      case unknownReply => throw new RuntimeException("boom")
-    }
+  override def get(key: String): Result[Option[Vector[Byte]]] = {
+    runCommand("GET", key).map(handleReplyWithErrorHandling {
+      case BulkReply(body) => body
+    })
   }
 
-  override def set(key: String, value: Vector[Byte]): F[Either[ErrorReply, Unit]] = {
-    runCommand("SET", key, value).map {
-      case SimpleStringReply("OK") => Right(())
-      case errorReply: ErrorReply  => Left(errorReply)
-      case unknownReply            => throw new RuntimeException("boom")
-    }
+  override def set(key: String, value: Vector[Byte]): Result[Unit] = {
+    runCommand("SET", key, value).map(handleReplyWithErrorHandling {
+      case SimpleStringReply("OK") => ()
+    })
   }
 
+  override def lpush(key: String, value: String): Result[Int] = {
+    runCommand("LPUSH", key, value).map(handleReplyWithErrorHandling {
+      case IntegerReply(count) => count.toInt
+    })
+  }
+
+  override def rpush(key: String, value: String): Result[Int] = {
+    runCommand("RPUSH", key, value).map(handleReplyWithErrorHandling {
+      case IntegerReply(count) => count.toInt
+    })
+  }
+
+  override def lrange(key: String, startIndex: Int, endIndex: Int): Result[List[String]] = {
+    runCommand("LRANGE", key, startIndex, endIndex).map(handleReplyWithErrorHandling {
+      case replies: ArrayReply =>
+        replies.replies.collect {
+          case BulkReply(bodyMaybe) => bodyMaybe.getOrElse(Vector.empty).asString
+        }
+    })
+  }
+
+  private def handleReplyWithErrorHandling[A](
+      handler: PartialFunction[RedisResponse, A]): PartialFunction[RedisResponse, ErrorReplyOr[A]] = {
+    handler.andThen(Right[ErrorReply, A]).orElse {
+      case errorReply: ErrorReply => Left[ErrorReply, A](errorReply)
+      case unknownReply           => throw new RuntimeException("boom")
+    }
+  }
 }

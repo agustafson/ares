@@ -12,12 +12,18 @@ trait RedisCommands {
 
   type CommandOp[A] = Free[Command, A]
 
-  def get(key: String): CommandOp[Option[Vector[Byte]]]
+  def get(key: String): CommandOp[ErrorReplyOr[Option[Vector[Byte]]]]
 
-  def set(key: String, value: Vector[Byte]): CommandOp[ErrorReplyOrUnit]
+  def set(key: String, value: Vector[Byte]): CommandOp[ErrorReplyOr[Unit]]
 
-  def selectDatabase(databaseIndex: Int): CommandOp[ErrorReplyOrUnit]
+  def lpush(key: String, value: String): CommandOp[ErrorReplyOr[Int]]
 
-  def flushdb: CommandOp[ErrorReplyOrUnit]
+  def rpush(key: String, value: String): CommandOp[ErrorReplyOr[Int]]
+
+  def lrange(key: String, startIndex: Int, endIndex: Int): CommandOp[ErrorReplyOr[List[String]]]
+
+  def selectDatabase(databaseIndex: Int): CommandOp[ErrorReplyOr[Unit]]
+
+  def flushdb: CommandOp[ErrorReplyOr[Unit]]
 
 }

@@ -14,8 +14,16 @@ import scala.concurrent.duration._
 
 abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream[F, Socket[F]]) extends StrictLogging {
 
+  val writeTimeout = Some(2.seconds)
+  val readTimeout  = Some(2.seconds)
+  val maxBytesRead = 1024
+
   protected def runCommand[T](command: String, args: Vector[Byte]*): F[RedisResponse] = {
     sendCommand(createCommand(command, args: _*))
+  }
+
+  protected def streamCommand(command: String, args: Vector[Byte]*): Stream[F, RedisResponse] = {
+    streamCommandResults(createCommand(command, args: _*)).map(RedisResponseHandler.handleResponse)
   }
 
   private def createCommand(command: String, args: Vector[Byte]*): Chunk[Byte] = {
@@ -31,12 +39,17 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
   }
 
   private def sendCommand(chunk: Chunk[Byte]): F[RedisResponse] = {
+    streamCommandResults(chunk).runFold(Vector.empty[Byte])(_ ++ _).map(RedisResponseHandler.handleResponse)
+  }
+
+  private def streamCommandResults(chunk: Chunk[Byte]): Stream[F, Vector[Byte]] = {
     logger.debug(s"sending command $chunk")
 
     val writeAndRead: (Socket[F]) => Stream[F, Vector[Byte]] = { socket =>
-      Stream.chunk(chunk).to(socket.writes(Some(2.seconds))).drain.onFinalize(socket.endOfOutput) ++
-        socket.reads(1024, Some(2.seconds)).chunks.map(_.toVector)
+      Stream.chunk(chunk).to(socket.writes(writeTimeout)).drain.onFinalize(socket.endOfOutput) ++
+        socket.reads(maxBytesRead, readTimeout).chunks.map(_.toVector)
     }
-    redisClient.flatMap(writeAndRead).runFold(Vector.empty[Byte])(_ ++ _).map(RedisResponseHandler.handleResponse)
+    val stream: Stream[F, Vector[Byte]] = redisClient.flatMap(writeAndRead)
+    stream
   }
 }

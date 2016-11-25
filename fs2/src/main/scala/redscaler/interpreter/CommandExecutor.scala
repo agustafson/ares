@@ -41,7 +41,7 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
         command.toArray.map(_.toByte) ++= CRLF ++=
         args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
 
-    logger.debug(s"command created: ${bytes.result().toVector.asString}")
+§    logger.trace(s"command created: ${bytes.result().toVector.asString}")
 
     Chunk.bytes(bytes.result().toArray)
   }
@@ -51,7 +51,7 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
   }
 
   private def streamCommandResults(chunk: Chunk[Byte]): Stream[F, Vector[Byte]] = {
-    logger.debug(s"sending command $chunk")
+    logger.trace(s"sending command $chunk")
 
     val writeAndRead: (Socket[F]) => Stream[F, Vector[Byte]] = { socket =>
       Stream.chunk(chunk).to(socket.writes(writeTimeout)).drain.onFinalize(socket.endOfOutput) ++

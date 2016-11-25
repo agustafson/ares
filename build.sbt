@@ -65,6 +65,7 @@ lazy val fs2 = project
           "co.fs2"                     %% "fs2-io"            % fs2,
           "co.fs2"                     %% "fs2-cats"          % "0.1.0",
           "com.typesafe.scala-logging" %% "scala-logging"     % "3.5.0",
+          "ch.qos.logback"             %  "logback-classic"   % "1.1.7" % "test",
           "org.scalacheck"             %% "scalacheck"        % "1.13.4" % "test",
           "org.specs2"                 %% "specs2-core"       % "3.8.4" % "test",
           "org.specs2"                 %% "specs2-scalacheck" % "3.8.4" % "test"

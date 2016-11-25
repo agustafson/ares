@@ -19,7 +19,7 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
   override def selectDatabase(databaseIndex: Int): Result[Unit] = {
     logger.info(s"Selecting database $databaseIndex")
 
-    runNoArgCommand(s"select $databaseIndex").map(handleReplyWithErrorHandling {
+    runKeyCommand(s"SELECT", databaseIndex.toString).map(handleReplyWithErrorHandling {
       case SimpleStringReply("OK") => ()
     })
   }
@@ -46,25 +46,25 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
 
   // List commands
   override def lpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("LPUSH", key, values.toList:_*).map(handleReplyWithErrorHandling {
+    runKeyCommand("LPUSH", key, values.toList: _*).map(handleReplyWithErrorHandling {
       case IntegerReply(count) => count.toInt
     })
   }
 
   override def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("LPUSHX", key, values.toList:_*).map(handleReplyWithErrorHandling {
+    runKeyCommand("LPUSHX", key, values.toList: _*).map(handleReplyWithErrorHandling {
       case IntegerReply(count) => count.toInt
     })
   }
 
   override def rpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("RPUSH", key, values.toList:_*).map(handleReplyWithErrorHandling {
+    runKeyCommand("RPUSH", key, values.toList: _*).map(handleReplyWithErrorHandling {
       case IntegerReply(count) => count.toInt
     })
   }
 
   override def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("RPUSHX", key, values.toList:_*).map(handleReplyWithErrorHandling {
+    runKeyCommand("RPUSHX", key, values.toList: _*).map(handleReplyWithErrorHandling {
       case IntegerReply(count) => count.toInt
     })
   }

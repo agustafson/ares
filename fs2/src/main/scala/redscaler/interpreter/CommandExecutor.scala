@@ -41,7 +41,7 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
         command.toArray.map(_.toByte) ++= CRLF ++=
         args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
 
-§    logger.trace(s"command created: ${bytes.result().toVector.asString}")
+    logger.trace(s"command created: ${bytes.result().toVector.asString}")
 
     Chunk.bytes(bytes.result().toArray)
   }

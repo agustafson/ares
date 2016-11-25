@@ -7,8 +7,8 @@ import redscaler.interpreter.ArgConverters._
 
 class PubSubTest extends Specification {
   trait PubSubScope extends RedisClientScope {
-    val publisher: Fs2PubSubInterpreter[Task]  = new Fs2PubSubInterpreter[Task](redisClient)
-    val subscriber: Fs2PubSubInterpreter[Task] = new Fs2PubSubInterpreter[Task](redisClient)
+    val publisher: Fs2PubSubInterpreter[Task]  = new Fs2PubSubInterpreter[Task](newRedisClient)
+    val subscriber: Fs2PubSubInterpreter[Task] = new Fs2PubSubInterpreter[Task](newRedisClient)
   }
 
   "publish with no subscribers" in new PubSubScope {

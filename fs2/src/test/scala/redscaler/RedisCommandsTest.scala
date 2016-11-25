@@ -16,7 +16,7 @@ class RedisCommandsTest extends Specification with ScalaCheck {
   val byteVectorGen: Gen[Vector[Byte]] = Arbitrary.arbContainer[Vector, Byte].arbitrary
 
   trait RedisCommandsScope extends RedisClientScope {
-    val commandInterpreter = new Fs2CommandInterpreter[Task](redisClient)
+    val commandInterpreter = new Fs2CommandInterpreter[Task](newRedisClient)
 
     def runCommand[T](op: ops.CommandOp[T]): T = {
       commandInterpreter.run(op).unsafeRun()

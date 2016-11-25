@@ -21,6 +21,6 @@ trait RedisClientScope extends Scope {
   implicit val acg              = AsynchronousChannelGroup.withThreadPool(executor)
 
   val redisHost: InetSocketAddress = new InetSocketAddress("127.0.0.1", 6379)
-  val redisClient: Stream[Task, Socket[Task]] =
+  def newRedisClient: Stream[Task, Socket[Task]] =
     tcp.client[Task](redisHost, reuseAddress = true, keepAlive = true, noDelay = true)
 }

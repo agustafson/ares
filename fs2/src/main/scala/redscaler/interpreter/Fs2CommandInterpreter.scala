@@ -18,18 +18,12 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
 
   override def selectDatabase(databaseIndex: Int): Result[Unit] = {
     logger.info(s"Selecting database $databaseIndex")
-
-    runKeyCommand(s"SELECT", databaseIndex.toString).map(handleReplyWithErrorHandling {
-      case SimpleStringReply("OK") => ()
-    })
+    runKeyCommand(s"SELECT", databaseIndex.toString).map(handleOkReply)
   }
 
   override def flushdb: Result[Unit] = {
     logger.info(s"Flushing db")
-
-    runNoArgCommand("flushdb").map(handleReplyWithErrorHandling {
-      case SimpleStringReply("OK") => ()
-    })
+    runNoArgCommand("flushdb").map(handleOkReply)
   }
 
   override def get(key: String): Result[Option[Vector[Byte]]] = {
@@ -39,34 +33,24 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
   }
 
   override def set(key: String, value: Vector[Byte]): Result[Unit] = {
-    runKeyCommand("SET", key, value).map(handleReplyWithErrorHandling {
-      case SimpleStringReply("OK") => ()
-    })
+    runKeyCommand("SET", key, value).map(handleOkReply)
   }
 
   // List commands
   override def lpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("LPUSH", key, values.toList: _*).map(handleReplyWithErrorHandling {
-      case IntegerReply(count) => count.toInt
-    })
+    runKeyCommand("LPUSH", key, values.toList: _*).map(handleIntReply)
   }
 
   override def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("LPUSHX", key, values.toList: _*).map(handleReplyWithErrorHandling {
-      case IntegerReply(count) => count.toInt
-    })
+    runKeyCommand("LPUSHX", key, values.toList: _*).map(handleIntReply)
   }
 
   override def rpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("RPUSH", key, values.toList: _*).map(handleReplyWithErrorHandling {
-      case IntegerReply(count) => count.toInt
-    })
+    runKeyCommand("RPUSH", key, values.toList: _*).map(handleIntReply)
   }
 
   override def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("RPUSHX", key, values.toList: _*).map(handleReplyWithErrorHandling {
-      case IntegerReply(count) => count.toInt
-    })
+    runKeyCommand("RPUSHX", key, values.toList: _*).map(handleIntReply)
   }
 
   override def lrange(key: String, startIndex: Int, endIndex: Int): Result[List[Vector[Byte]]] = {
@@ -76,6 +60,14 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
           case BulkReply(bodyMaybe) => bodyMaybe.getOrElse(Vector.empty)
         }
     })
+  }
+
+  private def handleOkReply: RedisResponse => ErrorReplyOr[Unit] = handleReplyWithErrorHandling {
+    case SimpleStringReply("OK") => ()
+  }
+
+  private def handleIntReply: RedisResponse => ErrorReplyOr[Int] = handleReplyWithErrorHandling {
+    case IntegerReply(num) => num.toInt
   }
 
   private def handleReplyWithErrorHandling[A](

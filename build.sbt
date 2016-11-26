@@ -39,8 +39,8 @@ lazy val core = project
       resolvers += Resolver.jcenterRepo,
       libraryDependencies ++= {
         Seq(
-          "org.typelevel"              %% "cats"              % "0.7.2",
-          "com.thangiee"               %% "freasy-monad"      % "0.4.1",
+          "org.typelevel"              %% "cats"              % "0.8.1",
+          "com.github.thangiee"        %% "freasy-monad"      % "0.5.0",
           "com.typesafe.scala-logging" %% "scala-logging"     % "3.5.0",
           "org.scalacheck"             %% "scalacheck"        % "1.13.4" % "test",
           "org.specs2"                 %% "specs2-core"       % "3.8.4" % "test",
@@ -58,12 +58,12 @@ lazy val fs2 = project
     Seq(
       resolvers += Resolver.jcenterRepo,
       libraryDependencies ++= {
-        val fs2 = "0.9.1"
+        val fs2 = "0.9.2"
         Seq(
-          "org.typelevel"              %% "cats"              % "0.7.2",
+          "org.typelevel"              %% "cats"              % "0.8.1",
           "co.fs2"                     %% "fs2-core"          % fs2,
           "co.fs2"                     %% "fs2-io"            % fs2,
-          "co.fs2"                     %% "fs2-cats"          % "0.1.0",
+          "co.fs2"                     %% "fs2-cats"          % "0.2.0",
           "com.typesafe.scala-logging" %% "scala-logging"     % "3.5.0",
           "ch.qos.logback"             %  "logback-classic"   % "1.1.7" % "test",
           "org.scalacheck"             %% "scalacheck"        % "1.13.4" % "test",

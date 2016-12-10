@@ -77,7 +77,7 @@ object RedisResponseHandler extends StrictLogging {
 
   private def processError: ByteVectorState[ErrorReply] = takeLine.map(vector => ErrorReply(vector.asString))
 
-  private def handleSingleResult: ByteVectorState[RedisResponse] = ByteVectorState { bytes =>
+  def handleSingleResult: ByteVectorState[RedisResponse] = ByteVectorState { bytes =>
     val messageBytes = bytes.tail
     val reply: (Vector[Byte], RedisResponse) = bytes.head match {
       case PLUS_BYTE =>

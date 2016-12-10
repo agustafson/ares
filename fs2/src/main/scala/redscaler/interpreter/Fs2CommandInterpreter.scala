@@ -27,7 +27,7 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
   }
 
   override def get(key: String): Result[Option[Vector[Byte]]] = {
-    runKeyCommand("GET", key).map(handleReplyWithErrorHandling {
+    runKeyCommand("GET", key).map(CommandExecutor.handleReplyWithErrorHandling {
       case BulkReply(body) => body
     })
   }
@@ -54,7 +54,7 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
   }
 
   override def lrange(key: String, startIndex: Int, endIndex: Int): Result[List[Vector[Byte]]] = {
-    runKeyCommand("LRANGE", key, startIndex, endIndex).map(handleReplyWithErrorHandling {
+    runKeyCommand("LRANGE", key, startIndex, endIndex).map(CommandExecutor.handleReplyWithErrorHandling {
       case replies: ArrayReply =>
         replies.replies.collect {
           case BulkReply(bodyMaybe) => bodyMaybe.getOrElse(Vector.empty)
@@ -62,19 +62,12 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
     })
   }
 
-  private def handleOkReply: RedisResponse => ErrorReplyOr[Unit] = handleReplyWithErrorHandling {
+  private def handleOkReply: RedisResponse => ErrorReplyOr[Unit] = CommandExecutor.handleReplyWithErrorHandling {
     case SimpleStringReply("OK") => ()
   }
 
-  private def handleIntReply: RedisResponse => ErrorReplyOr[Int] = handleReplyWithErrorHandling {
+  private def handleIntReply: RedisResponse => ErrorReplyOr[Int] = CommandExecutor.handleReplyWithErrorHandling {
     case IntegerReply(num) => num.toInt
   }
 
-  private def handleReplyWithErrorHandling[A](
-      handler: PartialFunction[RedisResponse, A]): PartialFunction[RedisResponse, ErrorReplyOr[A]] = {
-    handler.andThen(Right[ErrorReply, A]).orElse {
-      case errorReply: ErrorReply => Left[ErrorReply, A](errorReply)
-      case unknownReply           => throw new RuntimeException("boom")
-    }
-  }
 }

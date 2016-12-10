@@ -13,7 +13,7 @@ trait PubSub {
 
   def publish(channelName: String, message: Vector[Byte]): PubSubIO[Int]
 
-  def subscribe(channelName: String): PubSubIO[Stream[Nothing, SubscriberMessage]]
+  //def subscribe(channelName: String): PubSubIO[Stream[PubSubIO, SubscriberResponse]]
 
   def unsubscribe(channelName: String): PubSubIO[Unit]
 

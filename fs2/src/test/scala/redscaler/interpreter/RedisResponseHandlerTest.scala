@@ -1,10 +1,8 @@
 package redscaler.interpreter
 
+import org.scalacheck.{Gen, Prop, Properties}
 import redscaler._
 import redscaler.interpreter.RedisResponseHandler._
-import org.scalacheck.{Gen, Prop, Properties}
-import org.specs2.ScalaCheck
-import org.specs2.mutable.Specification
 
 import scala.collection.mutable.ListBuffer
 

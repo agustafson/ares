@@ -66,16 +66,18 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
     redisClient.flatMap(writeAndRead)
   }
 
-  def rows(h: SubscriberResponseHandle)(implicit F: Async[F]): Stream[F, SubscriberResponse] =
-    for {
-      q <- Stream.eval(fs2.async.unboundedQueue[F, Either[Throwable, SubscriberResponse]])
-      _ <- Stream.suspend {
-        h.withResponse { e =>
-          F.unsafeRunAsync(q.enqueue1(e))(_ => ())
-        }; Stream.emit(())
-      }
-      row <- q.dequeue through pipe.rethrow
-    } yield row
+  val takeResponseH: Byte => Pull[F, SubscriberResponse, Handle[F, Byte]] = {
+    case PLUS_BYTE =>
+      processSimpleStringReply
+    case DOLLAR_BYTE =>
+      processBulkReply
+    case ASTERISK_BYTE =>
+      processMultiBulkReply
+    case COLON_BYTE =>
+      processInteger
+    case MINUS_BYTE =>
+      processError
+  }
 
   def takeResponse(h: Handle[F, Byte]): Pull[F, ErrorReplyOr[SubscriberResponse], Byte] =
     for {
@@ -152,7 +154,29 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
     def apply[A](f: Stream[F, Byte] => Stream[F, A]): BytePipe[A] = f
   }
 
-  private val takeLineH: Handle[F, Byte] => Pull[F, Vector[Byte], ]
+  private val takeLineH: Handle[F, Byte] => Pull[F, Vector[Byte], Handle[F, Byte]] = {
+    def takeByte(bytes: Vector[Byte])(h: Handle[F, Byte]): Pull[F, Vector[Byte], Handle[F, Byte]] = {
+      if (bytes endsWith CRLF) {
+        Pull.output1[F, Vector[Byte]](bytes) as h
+      } else
+        h.receive1 {
+          case (b, tl) =>
+            takeByte(bytes :+ b)(tl)
+        }
+    }
+    takeByte(Vector.empty)
+
+    /*Pull.loop {
+      (_: Handle[F, Byte]).awaitN(2, allowFewer = false).flatMap {
+        case (chunks, h) =>
+          val currentByteChunk = chunks.flatMap(_.toVector).toVector
+          if (currentByteChunk == CRLF)
+            Pull.done
+          else
+            Pull.output1(currentByteChunk) as h
+      }
+    }*/
+  }
 
   private val takeLine: BytePipe[Vector[Byte]] =
     BytePipe {
@@ -193,6 +217,10 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
       } yield firstLine.toVector
     }
    */
+
+  private val takeIntegerLineH: Handle[F, Byte] => Pull[F, Int, Handle[F, Byte]] = { h =>
+    takeLineH(h)
+  }
 
   private val takeIntegerLine: BytePipe[Long] =
     takeLine.map(_.map(_.toChar).mkString.toLong)
@@ -283,22 +311,6 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](redisClient: Stream
 
   private def processError: BytePipe[ErrorReply] = takeLine.map(bytes => ErrorReply(bytes.asString))
 
-  def handleSingleResult: BytePipe[RedisResponse] = BytePipe { bytes =>
-    bytes.take(1).flatMap {
-      case PLUS_BYTE =>
-        processSimpleStringReply.apply(bytes.tail)
-      case DOLLAR_BYTE =>
-        processBulkReply
-      case ASTERISK_BYTE =>
-        processMultiBulkReply
-      case COLON_BYTE =>
-        processInteger
-      case MINUS_BYTE =>
-        processError
-      case b =>
-        throw new RuntimeException("Unknown reply: " + b.toChar)
-    }
-  }
 }
 
 object CommandExecutor {

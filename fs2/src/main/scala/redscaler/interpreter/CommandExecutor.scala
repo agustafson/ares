@@ -34,10 +34,6 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
     sendCommand(createCommand(command, args))
   }
 
-  protected def streamCommand(command: String, args: Seq[Vector[Byte]]): Stream[F, RedisResponse] = {
-    streamCommandResults(createCommand(command, args)).repeatPull(handleResponse)
-  }
-
   protected def createCommand(command: String, args: Seq[Vector[Byte]]): Chunk[Byte] = {
     val bytes = new mutable.ListBuffer() +=
         ASTERISK_BYTE ++= intCrlf(args.length + 1) +=
@@ -64,16 +60,6 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
       .map(_.get) //.runFold(Vector.empty[Byte])(_ ++ _).map(handleResponse)
 
     // FIXME .get
-  }
-
-  private def streamCommandResults(chunk: Chunk[Byte]): Stream[F, Byte] = {
-    logger.trace(s"sending command $chunk")
-
-    val writeAndRead: (Socket[F]) => Stream[F, Byte] = { socket =>
-      Stream.chunk(chunk).to(socket.writes(writeTimeout)).drain.onFinalize(socket.endOfOutput) ++
-        socket.reads(maxBytesRead, readTimeout)
-    }
-    redisClient.flatMap(writeAndRead)
   }
 
   protected def subscribeAndPull(command: Chunk[Byte])(

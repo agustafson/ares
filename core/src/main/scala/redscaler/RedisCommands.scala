@@ -13,22 +13,22 @@ trait RedisCommands {
 
   type CommandOp[A] = Free[Command, A]
 
-  def get(key: String): CommandOp[ErrorReplyOr[Option[Vector[Byte]]]]
+  def get(key: String): CommandOp[ErrorOr[Option[Vector[Byte]]]]
 
-  def set(key: String, value: Vector[Byte]): CommandOp[ErrorReplyOr[Unit]]
+  def set(key: String, value: Vector[Byte]): CommandOp[ErrorOr[Unit]]
 
-  def lpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
+  def lpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorOr[Int]]
 
-  def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
+  def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorOr[Int]]
 
-  def rpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
+  def rpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorOr[Int]]
 
-  def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorReplyOr[Int]]
+  def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorOr[Int]]
 
-  def lrange(key: String, startIndex: Int, endIndex: Int): CommandOp[ErrorReplyOr[List[Vector[Byte]]]]
+  def lrange(key: String, startIndex: Int, endIndex: Int): CommandOp[ErrorOr[List[Vector[Byte]]]]
 
-  def selectDatabase(databaseIndex: Int): CommandOp[ErrorReplyOr[Unit]]
+  def selectDatabase(databaseIndex: Int): CommandOp[ErrorOr[Unit]]
 
-  def flushdb: CommandOp[ErrorReplyOr[Unit]]
+  def flushdb: CommandOp[ErrorOr[Unit]]
 
 }

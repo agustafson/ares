@@ -15,15 +15,13 @@ class Fs2PubSubInterpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(imp
     extends CommandExecutor(redisClient)
     with PubSub.Interp[F] {
 
-  override def publish(channelName: String, message: Vector[Byte]): F[Int] = {
-    runKeyCommand("publish", channelName, message).map {
+  override def publish(channelName: String, message: Vector[Byte]): F[ErrorOr[Int]] = {
+    runKeyCommand("publish", channelName, message).map(CommandExecutor.handleReplyWithErrorHandling {
       case IntegerReply(receiverCount) => receiverCount.toInt
-      case reply                       => throw new RuntimeException("boom")
-    }
+    })
   }
 
-  def subscribe(channelName: String): Stream[F, ErrorReplyOr[SubscriberResponse]] = {
-    //streamCommand("subscribe", Seq(channelName)).map(SubscriptionResponseHandler.handler)
+  def subscribe(channelName: String): Stream[F, ErrorOr[SubscriberResponse]] = {
     subscribeAndPull(createCommand("subscribe", Seq(channelName)))
   }
 
@@ -34,7 +32,7 @@ object SubscriptionResponseHandler {
   private val subscribeMsg: Vector[Byte] = stringArgConverter("subscribe")
   private val messageMsg: Vector[Byte]   = stringArgConverter("message")
 
-  val handler: PartialFunction[RedisResponse, ErrorReplyOr[SubscriberResponse]] =
+  val handler: PartialFunction[RedisResponse, ErrorOr[SubscriberResponse]] =
     CommandExecutor.handleReplyWithErrorHandling {
       case ArrayReply(BulkReply(Some(`subscribeMsg`)) :: BulkReply(Some(publishingChannelName)) :: IntegerReply(
             subscribedCount) :: Nil) =>

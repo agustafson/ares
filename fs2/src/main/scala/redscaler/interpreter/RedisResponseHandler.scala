@@ -16,7 +16,7 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
   import RedisConstants._
 
   private type ByteHandle        = Handle[F, Byte]
-  private type ByteHandlePull[A] = Pull[F, Byte, (A, ByteHandle)]
+  private type ByteHandlePull[A] = Pull[F, Nothing, (A, ByteHandle)]
 
   /*
   private type PullHandler[A]    = ByteHandle => ByteHandlePull[A]
@@ -60,7 +60,7 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
     override def tailRecM[A, B](a: A)(
         f: (A) => (ByteHandle) => ByteHandlePull[Either[A, B]]): (ByteHandle) => ByteHandlePull[B] = {
       f(a).andThen {
-        _.flatMap[F, Byte, (B, ByteHandle)] {
+        _.flatMap[F, Nothing, (B, ByteHandle)] {
           case (Left(a1), nextHandle) =>
             tailRecM(a1)(f)(nextHandle)
           case (Right(b), nextHandle) =>
@@ -70,8 +70,10 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
     }
   }
 
-  def handleResponse(byteHandle: ByteHandle): ByteHandlePull[RedisResponse] = {
-    val result = handleSingleResult(byteHandle)
+  def handleResponse(byteHandle: ByteHandle): Pull[F, RedisResponse, ByteHandle] = {
+    val result = handleSingleResult(byteHandle).flatMap {
+      case (response, handle) => Pull.output1[F, RedisResponse](response) as handle
+    }
     logger.debug(s"response: $result")
     result
   }
@@ -79,7 +81,7 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
   private val takeLine: ByteHandle => ByteHandlePull[Vector[Byte]] = {
     def takeByte(bytes: Vector[Byte]): ByteHandle => ByteHandlePull[Vector[Byte]] = { h =>
       if (bytes endsWith CRLF) {
-        Pull.pure((bytes, h))
+        Pull.pure((bytes.dropRight(2), h))
       } else
         h.receive1 {
           case (b, tl) =>
@@ -159,7 +161,7 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
           case MINUS_BYTE =>
             processError(h)
           case b =>
-            throw new RuntimeException("Unknown reply: " + b.toChar)
+            Pull.fail(UnexpectedResponseType(b.toChar))
         }
     }
   }

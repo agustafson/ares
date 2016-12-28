@@ -14,7 +14,7 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
     with RedisCommands.Interp[F]
     with StrictLogging {
 
-  type Result[A] = F[ErrorReplyOr[A]]
+  type Result[A] = F[ErrorOr[A]]
 
   override def selectDatabase(databaseIndex: Int): Result[Unit] = {
     logger.info(s"Selecting database $databaseIndex")
@@ -62,11 +62,11 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
     })
   }
 
-  private def handleOkReply: RedisResponse => ErrorReplyOr[Unit] = CommandExecutor.handleReplyWithErrorHandling {
+  private def handleOkReply: RedisResponse => ErrorOr[Unit] = CommandExecutor.handleReplyWithErrorHandling {
     case SimpleStringReply("OK") => ()
   }
 
-  private def handleIntReply: RedisResponse => ErrorReplyOr[Int] = CommandExecutor.handleReplyWithErrorHandling {
+  private def handleIntReply: RedisResponse => ErrorOr[Int] = CommandExecutor.handleReplyWithErrorHandling {
     case IntegerReply(num) => num.toInt
   }
 

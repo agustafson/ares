@@ -1,5 +1,5 @@
 package object redscaler {
 
-  type ErrorReplyOr[A] = Either[ErrorReply, A]
+  type ErrorOr[A] = Either[Error, A]
 
 }

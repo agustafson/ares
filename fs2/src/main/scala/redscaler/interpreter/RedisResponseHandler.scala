@@ -1,6 +1,5 @@
 package redscaler.interpreter
 
-import cats._
 import com.typesafe.scalalogging.StrictLogging
 import fs2.{Handle, Pull}
 import redscaler._
@@ -39,29 +38,6 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
     def mapLeft[B](f: A => B): ByteHandlePull[B] = {
       underlying.map {
         case (a, handle) => (f(a), handle)
-      }
-    }
-  }
-
-  implicit val byteHandlePullMonad = new Monad[λ[α => ByteHandle => ByteHandlePull[α]]] {
-    override def pure[A](a: A): ByteHandle => ByteHandlePull[A] = handle => Pull.pure[(A, ByteHandle)]((a, handle))
-
-    override def flatMap[A, B](fa: (ByteHandle) => ByteHandlePull[A])(
-        f: (A) => (ByteHandle) => ByteHandlePull[B]): (ByteHandle) => ByteHandlePull[B] = {
-      fa.andThen(_.flatMap {
-        case (a, nextHandle) => f(a)(nextHandle)
-      })
-    }
-
-    override def tailRecM[A, B](a: A)(
-        f: (A) => (ByteHandle) => ByteHandlePull[Either[A, B]]): (ByteHandle) => ByteHandlePull[B] = {
-      f(a).andThen {
-        _.flatMap[F, Nothing, (B, ByteHandle)] {
-          case (Left(a1), nextHandle) =>
-            tailRecM(a1)(f)(nextHandle)
-          case (Right(b), nextHandle) =>
-            Pull.pure((b, nextHandle))
-        }
       }
     }
   }

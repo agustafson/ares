@@ -71,11 +71,9 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
   }
 
   def handleResponse(byteHandle: ByteHandle): Pull[F, RedisResponse, ByteHandle] = {
-    val result = handleSingleResult(byteHandle).flatMap {
+    handleSingleResult(byteHandle).flatMap {
       case (response, handle) => Pull.output1[F, RedisResponse](response) as handle
     }
-    logger.debug(s"response: $result")
-    result
   }
 
   private val takeLine: ByteHandle => ByteHandlePull[Vector[Byte]] = {

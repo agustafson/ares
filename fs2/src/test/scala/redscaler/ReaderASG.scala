@@ -2,14 +2,14 @@ package redscaler
 
 import java.net.{InetSocketAddress, StandardSocketOptions}
 import java.nio.ByteBuffer
-import java.nio.channels.{AsynchronousChannelGroup, CompletionHandler}
 import java.nio.channels.spi.AsynchronousChannelProvider
+import java.nio.channels.{AsynchronousChannelGroup, CompletionHandler}
 import java.util.concurrent.{ExecutorService, Executors}
 
-import fs2.{Chunk, Strategy}
-import redscaler.interpreter._
+import fs2.Strategy
 import redscaler.interpreter.ArgConverters._
 import redscaler.interpreter.RedisConstants._
+import redscaler.interpreter._
 
 import scala.collection.mutable
 
@@ -37,15 +37,19 @@ object ReaderASG extends App {
   ch.setOption[java.lang.Boolean](StandardSocketOptions.SO_KEEPALIVE, true)
   ch.setOption[java.lang.Boolean](StandardSocketOptions.TCP_NODELAY, true)
 
-  ch.connect(new InetSocketAddress("127.0.0.1", 6379), null, new CompletionHandler[Void, Void] {
-    override def completed(result: Void, attachment: Void): Unit = {
-      println(s"result is: $result")
-    }
+  ch.connect(
+    new InetSocketAddress("127.0.0.1", 6379),
+    null,
+    new CompletionHandler[Void, Void] {
+      override def completed(result: Void, attachment: Void): Unit = {
+        println(s"result is: $result")
+      }
 
-    override def failed(ex: Throwable, attachment: Void): Unit = {
-      ex.printStackTrace()
+      override def failed(ex: Throwable, attachment: Void): Unit = {
+        ex.printStackTrace()
+      }
     }
-  })
+  )
 
   val writeResult = ch.write(createCommand("SUBSCRIBE", Seq("ch1", "ch2"))).get()
   println(s"write result: $writeResult")

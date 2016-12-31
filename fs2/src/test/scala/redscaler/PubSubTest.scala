@@ -1,12 +1,12 @@
 package redscaler
 
-import fs2.{Chunk, Handle, NonEmptyChunk, Pull, Stream, Task}
+import fs2.{Handle, Pull, Task}
 import org.specs2.mutable.Specification
-import redscaler.interpreter.{Fs2CommandInterpreter, Fs2PubSubInterpreter}
 import redscaler.interpreter.ArgConverters._
+import redscaler.interpreter.Fs2PubSubInterpreter
 import redscaler.pubsub.{Message, Subscribe, SubscriberResponse}
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 
 class PubSubTest extends Specification {
   sequential

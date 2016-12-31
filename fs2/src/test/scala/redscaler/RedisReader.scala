@@ -5,17 +5,15 @@ import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.{ExecutorService, Executors}
 
 import com.typesafe.scalalogging.StrictLogging
-import fs2.async.mutable.Queue
 import fs2.io.tcp
-import fs2.{Handle, NonEmptyChunk, Pipe, Pull, Scheduler, Sink, Strategy, Stream, Task, pipe}
 import fs2.io.tcp.Socket
 import fs2.util.{Applicative, Async, Catchable}
-import redscaler.interpreter._
+import fs2.{NonEmptyChunk, Pipe, Pull, Scheduler, Strategy, Stream, Task}
 import redscaler.interpreter.ArgConverters._
-import redscaler.interpreter.CommandExecutor
+import redscaler.interpreter.{CommandExecutor, _}
 import redscaler.pubsub.SubscriberResponse
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Try
 

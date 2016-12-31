@@ -1,12 +1,9 @@
 package redscaler.interpreter
 
-import cats.Id
+import fs2.util.Attempt
 import fs2.{Chunk, Stream}
-import fs2.interop.cats._
-import fs2.util.{Attempt, Catchable}
 import org.scalacheck.{Gen, Prop, Properties}
 import org.specs2.ScalaCheck
-import org.specs2.execute.Failure
 import org.specs2.mutable.Specification
 import redscaler._
 

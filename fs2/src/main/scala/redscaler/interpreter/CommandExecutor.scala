@@ -49,7 +49,7 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
     val bytes = new mutable.ListBuffer() +=
         ASTERISK_BYTE ++= intCrlf(args.length + 1) +=
         DOLLAR_BYTE ++= intCrlf(command.length) ++=
-        command.toArray.map(_.toByte) ++= CRLF ++=
+        command.getBytes ++= CRLF ++=
         args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
 
     logger.trace(s"command created: ${bytes.result().toVector.asString}")

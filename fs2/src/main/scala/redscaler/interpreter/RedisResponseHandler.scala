@@ -1,10 +1,6 @@
 package redscaler.interpreter
 
 import cats._
-import cats.instances.function._
-import cats.syntax.tuple._
-import cats.syntax.functor._
-import cats.syntax.flatMap._
 import com.typesafe.scalalogging.StrictLogging
 import fs2.{Handle, Pull}
 import redscaler._

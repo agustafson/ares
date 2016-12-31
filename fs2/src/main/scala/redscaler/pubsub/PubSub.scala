@@ -2,7 +2,6 @@ package redscaler.pubsub
 
 import cats.free.Free
 import freasymonad.cats.free
-import fs2.Stream
 import redscaler.ErrorOr
 
 @free

@@ -1,6 +1,5 @@
 package redscaler.interpreter
 
-import cats.syntax.option._
 import com.typesafe.scalalogging.StrictLogging
 import fs2.io.tcp.Socket
 import fs2.util.syntax._
@@ -22,16 +21,28 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
   val readTimeout  = Some(2.seconds)
   val maxBytesRead = 1024
 
-  protected def runKeyCommand(command: String, key: String, args: Vector[Byte]*): F[RedisResponse] = {
+  protected def runKeyCommand(command: String, key: String, args: Vector[Byte]*): F[ErrorOr[RedisResponse]] = {
     runCommand(command, stringArgConverter(key) +: args)
   }
 
-  protected def runNoArgCommand(command: String): F[RedisResponse] = {
+  protected def runNoArgCommand(command: String): F[ErrorOr[RedisResponse]] = {
     runCommand(command, Seq.empty)
   }
 
-  protected def runCommand[T](command: String, args: Seq[Vector[Byte]]): F[RedisResponse] = {
-    sendCommand(createCommand(command, args))
+  protected def runCommand[T](command: String, args: Seq[Vector[Byte]]): F[ErrorOr[RedisResponse]] = {
+    val writeAndRead: (Socket[F]) => Stream[F, Byte] = { socket =>
+      Stream
+        .chunk(createCommand(command, args))
+        .to(socket.writes(writeTimeout))
+        .drain
+        .onFinalize(socket.endOfOutput) ++
+        socket.reads(maxBytesRead, readTimeout)
+    }
+    redisClient
+      .flatMap(writeAndRead)
+      .pull(handleResponse)
+      .runLast
+      .map(_.fold[ErrorOr[RedisResponse]](Left(EmptyResponse))(Right(_)))
   }
 
   protected def createCommand(command: String, args: Seq[Vector[Byte]]): Chunk[Byte] = {
@@ -44,22 +55,6 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
     logger.trace(s"command created: ${bytes.result().toVector.asString}")
 
     Chunk.bytes(bytes.result().toArray)
-  }
-
-  private def sendCommand(chunk: Chunk[Byte]): F[RedisResponse] = {
-    val writeAndRead: (Socket[F]) => Stream[F, Byte] = { socket =>
-      Stream.chunk(chunk).to(socket.writes(writeTimeout)).drain.onFinalize(socket.endOfOutput) ++
-        socket.reads(maxBytesRead, readTimeout)
-    }
-    redisClient
-      .flatMap(writeAndRead)
-      .pull(handleResponse)
-      .runFold(none[RedisResponse]) {
-        case (responseMaybe, response) => responseMaybe orElse Some(response)
-      }
-      .map(_.get) //.runFold(Vector.empty[Byte])(_ ++ _).map(handleResponse)
-
-    // FIXME .get
   }
 
   protected def subscribeAndPull(command: Chunk[Byte])(
@@ -97,10 +92,10 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
 
 object CommandExecutor {
   def handleReplyWithErrorHandling[A](
-      handler: PartialFunction[RedisResponse, A]): PartialFunction[RedisResponse, ErrorOr[A]] = {
-    handler.andThen(Right[Error, A]).orElse {
-      case errorReply: ErrorReply => Left[Error, A](errorReply)
-      case unknownReply           => Left(UnexpectedResponse(unknownReply))
-    }
+      handler: PartialFunction[RedisResponse, A]): Function[ErrorOr[RedisResponse], ErrorOr[A]] = {
+    case Left(error) =>
+      Left(error)
+    case Right(result) =>
+      handler.lift(result).fold[ErrorOr[A]](Left(UnexpectedResponse(result)))(Right(_))
   }
 }

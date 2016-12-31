@@ -18,5 +18,7 @@ case class ErrorReply(errorMessage: String) extends RedisResponse with Error
 
 case class UnexpectedResponse(response: RedisResponse) extends Error
 
+case object EmptyResponse extends Error
+
 case class UnexpectedResponseType(responseType: Char)
     extends Exception(s"Received unexpexted response type: $responseType")

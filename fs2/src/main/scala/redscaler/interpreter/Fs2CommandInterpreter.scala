@@ -62,11 +62,11 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
     })
   }
 
-  private def handleOkReply: RedisResponse => ErrorOr[Unit] = CommandExecutor.handleReplyWithErrorHandling {
+  private def handleOkReply: ErrorOr[RedisResponse] => ErrorOr[Unit] = CommandExecutor.handleReplyWithErrorHandling {
     case SimpleStringReply("OK") => ()
   }
 
-  private def handleIntReply: RedisResponse => ErrorOr[Int] = CommandExecutor.handleReplyWithErrorHandling {
+  private def handleIntReply: ErrorOr[RedisResponse] => ErrorOr[Int] = CommandExecutor.handleReplyWithErrorHandling {
     case IntegerReply(num) => num.toInt
   }
 

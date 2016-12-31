@@ -32,7 +32,7 @@ object SubscriptionResponseHandler {
   private val subscribeMsg: Vector[Byte] = stringArgConverter("subscribe")
   private val messageMsg: Vector[Byte]   = stringArgConverter("message")
 
-  val handler: PartialFunction[RedisResponse, ErrorOr[SubscriberResponse]] =
+  val handler: Function[ErrorOr[RedisResponse], ErrorOr[SubscriberResponse]] =
     CommandExecutor.handleReplyWithErrorHandling {
       case ArrayReply(BulkReply(Some(`subscribeMsg`)) :: BulkReply(Some(publishingChannelName)) :: IntegerReply(
             subscribedCount) :: Nil) =>

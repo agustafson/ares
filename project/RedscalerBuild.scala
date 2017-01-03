@@ -1,0 +1,21 @@
+import sbt._
+
+object RedscalerBuild {
+
+  object Dependencies {
+    private val fs2Version  = "0.9.2"
+    private val catsVersion = "3.8.6"
+
+    lazy val cats             = "org.typelevel"              %% "cats"              % "0.8.1"
+    lazy val fs2Core          = "co.fs2"                     %% "fs2-core"          % fs2Version
+    lazy val fs2Io            = "co.fs2"                     %% "fs2-io"            % fs2Version
+    lazy val fs2Cats          = "co.fs2"                     %% "fs2-cats"          % "0.2.0"
+    lazy val freasyMonad      = "com.github.thangiee"        %% "freasy-monad"      % "0.5.0"
+    lazy val scalaLogging     = "com.typesafe.scala-logging" %% "scala-logging"     % "3.5.0"
+    lazy val logbackClassic   = "ch.qos.logback"             % "logback-classic"    % "1.1.7" % "test"
+    lazy val scalacheck       = "org.scalacheck"             %% "scalacheck"        % "1.13.4" % "test"
+    lazy val specs2Core       = "org.specs2"                 %% "specs2-core"       % catsVersion % "test"
+    lazy val specs2Scalacheck = "org.specs2"                 %% "specs2-scalacheck" % catsVersion % "test"
+  }
+
+}

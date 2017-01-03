@@ -1,10 +1,15 @@
 import sbt._
+import RedscalerBuild._
 
+organization := "io.redscaler"
 name := "redscaler"
+scalaVersion := "2.12.0"
+crossScalaVersions := Seq("2.11.8", scalaVersion.value)
 
 val baseSettings = Seq(
   organization := "io.redscaler",
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.12.0",
+  crossScalaVersions := Seq("2.11.8", scalaVersion.value),
   scalafmtConfig in ThisBuild := Some(file(".scalafmt.conf"))
 )
 
@@ -34,44 +39,41 @@ val scalacSettings = Seq(
 lazy val core = project
   .settings(baseSettings)
   .settings(scalacSettings)
-  .settings(
-    Seq(
-      resolvers += Resolver.jcenterRepo,
-      libraryDependencies ++= {
-        Seq(
-          "org.typelevel"              %% "cats"              % "0.8.1",
-          "com.github.thangiee"        %% "freasy-monad"      % "0.5.0",
-          "com.typesafe.scala-logging" %% "scala-logging"     % "3.5.0",
-          "org.scalacheck"             %% "scalacheck"        % "1.13.4" % "test",
-          "org.specs2"                 %% "specs2-core"       % "3.8.4" % "test",
-          "org.specs2"                 %% "specs2-scalacheck" % "3.8.4" % "test"
-        )
-      },
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-    ))
+  .settings(Seq(
+    resolvers += Resolver.jcenterRepo,
+    libraryDependencies ++= {
+      Seq(
+        Dependencies.cats,
+        Dependencies.freasyMonad,
+        Dependencies.scalaLogging,
+        Dependencies.scalacheck,
+        Dependencies.specs2Core,
+        Dependencies.specs2Scalacheck
+      )
+    },
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+  ))
 
 lazy val fs2 = project
   .dependsOn(core)
   .settings(baseSettings)
   .settings(scalacSettings)
-  .settings(
-    Seq(
-      resolvers += Resolver.jcenterRepo,
-      resolvers += Resolver.sonatypeRepo("releases"),
-      libraryDependencies ++= {
-        val fs2 = "0.9.2"
-        Seq(
-          "org.typelevel"              %% "cats"              % "0.8.1",
-          "co.fs2"                     %% "fs2-core"          % fs2,
-          "co.fs2"                     %% "fs2-io"            % fs2,
-          "co.fs2"                     %% "fs2-cats"          % "0.2.0",
-          "com.typesafe.scala-logging" %% "scala-logging"     % "3.5.0",
-          "ch.qos.logback"             % "logback-classic"    % "1.1.7" % "test",
-          "org.scalacheck"             %% "scalacheck"        % "1.13.4" % "test",
-          "org.specs2"                 %% "specs2-core"       % "3.8.4" % "test",
-          "org.specs2"                 %% "specs2-scalacheck" % "3.8.4" % "test"
-        )
-      },
-      addCompilerPlugin("org.scalamacros" % "paradise"       % "2.1.0" cross CrossVersion.full),
-      addCompilerPlugin("org.spire-math"  % "kind-projector" % "0.9.3" cross CrossVersion.binary)
-    ))
+  .settings(Seq(
+    resolvers += Resolver.jcenterRepo,
+    resolvers += Resolver.sonatypeRepo("releases"),
+    libraryDependencies ++= {
+      Seq(
+        Dependencies.cats,
+        Dependencies.fs2Core,
+        Dependencies.fs2Io,
+        Dependencies.fs2Cats,
+        Dependencies.scalaLogging,
+        Dependencies.logbackClassic,
+        Dependencies.scalacheck,
+        Dependencies.specs2Core,
+        Dependencies.specs2Scalacheck
+      )
+    },
+    addCompilerPlugin("org.scalamacros" % "paradise"       % "2.1.0" cross CrossVersion.full),
+    addCompilerPlugin("org.spire-math"  % "kind-projector" % "0.9.3" cross CrossVersion.binary)
+  ))

@@ -3,12 +3,12 @@ import RedscalerBuild._
 
 organization := "io.redscaler"
 name := "redscaler"
-scalaVersion := "2.12.0"
+scalaVersion := "2.12.1"
 crossScalaVersions := Seq("2.11.8", scalaVersion.value)
 
 val baseSettings = Seq(
   organization := "io.redscaler",
-  scalaVersion := "2.12.0",
+  scalaVersion := "2.12.1",
   crossScalaVersions := Seq("2.11.8", scalaVersion.value),
   scalafmtConfig in ThisBuild := Some(file(".scalafmt.conf"))
 )

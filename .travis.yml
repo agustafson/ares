@@ -1,6 +1,19 @@
 language: scala
+
 scala:
    - 2.11.8
    - 2.12.1
+
+jdk:
+  - oraclejdk8
+
 services:
   - redis-server
+
+cache:
+  directories:
+  - $HOME/.sbt/0.13
+  - $HOME/.sbt/boot/scala*
+  - $HOME/.sbt/cache
+  - $HOME/.sbt/launchers
+  - $HOME/.ivy2

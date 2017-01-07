@@ -72,31 +72,24 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
   private val takeIntegerLine: ByteHandle => ByteHandlePull[Long] =
     takeLine.andThen(_.mapLeft(bytes => bytes.map(_.toChar).mkString.toLong))
 
-  private val processSimpleStringReply: ByteHandle => ByteHandlePull[SimpleStringReply] =
-    takeLine.andThen(_.mapLeft(bytes => SimpleStringReply(bytes.asString)))
+  private val processSimpleStringResponse: ByteHandle => ByteHandlePull[SimpleStringResponse] =
+    takeLine.andThen(_.mapLeft(bytes => SimpleStringResponse(bytes.asString)))
 
-  private val processBulkReply: ByteHandle => ByteHandlePull[BulkReply] = { h =>
+  private val processBulkResponse: ByteHandle => ByteHandlePull[BulkResponse] = { h =>
     for {
       (messageLength, h) <- takeIntegerLine(h)
-      result <- if (messageLength == -1) Pull.pure((BulkReply(None), h))
-      else takeContentByLengthAndNewLine(messageLength.toInt).andThen(_.mapLeft(bytes => BulkReply(Some(bytes))))(h)
+      result <- if (messageLength == -1) Pull.pure((BulkResponse(None), h))
+      else takeContentByLengthAndNewLine(messageLength.toInt).andThen(_.mapLeft(bytes => BulkResponse(Some(bytes))))(h)
     } yield {
       result
     }
   }
 
-  private val processMultiBulkReply: ByteHandle => ByteHandlePull[ArrayReply] = {
+  private val processMultiBulkResponse: ByteHandle => ByteHandlePull[ArrayResponse] = {
     @tailrec
     def takeReplies(remainingCount: Int,
                     pull: ByteHandlePull[List[RedisResponse]]): ByteHandlePull[List[RedisResponse]] = {
       if (remainingCount > 0) {
-        /*
-        val newState = currentState.transform {
-          case (currentBytes, responses) =>
-            val (remainingBytes, reply) = handleSingleResult.run(currentBytes)
-            (remainingBytes, responses :+ reply)
-        }
-         */
         takeReplies(remainingCount - 1, for {
           (responses, handle) <- pull
           (response, handle)  <- handleSingleResult(handle)
@@ -106,26 +99,26 @@ trait RedisResponseHandler[F[_]] extends StrictLogging {
 
     takeIntegerLine.andThen(_.flatMap {
       case (numberOfArgs, handle) =>
-        takeReplies(numberOfArgs.toInt, Pull.pure((List.empty, handle))).mapLeft(replies => ArrayReply(replies))
+        takeReplies(numberOfArgs.toInt, Pull.pure((List.empty, handle))).mapLeft(replies => ArrayResponse(replies))
     })
   }
 
-  private def processInteger: ByteHandle => ByteHandlePull[IntegerReply] =
-    takeIntegerLine.andThen(_.mapLeft(IntegerReply))
+  private def processInteger: ByteHandle => ByteHandlePull[IntegerResponse] =
+    takeIntegerLine.andThen(_.mapLeft(IntegerResponse))
 
-  private def processError: ByteHandle => ByteHandlePull[ErrorReply] =
-    takeLine.andThen(_.mapLeft(vector => ErrorReply(vector.asString)))
+  private def processError: ByteHandle => ByteHandlePull[ErrorResponse] =
+    takeLine.andThen(_.mapLeft(vector => ErrorResponse(vector.asString)))
 
   def handleSingleResult: ByteHandle => ByteHandlePull[RedisResponse] = { handle =>
     handle.receive1 {
       case (b, h) =>
         b match {
           case PLUS_BYTE =>
-            processSimpleStringReply(h)
+            processSimpleStringResponse(h)
           case DOLLAR_BYTE =>
-            processBulkReply(h)
+            processBulkResponse(h)
           case ASTERISK_BYTE =>
-            processMultiBulkReply(h)
+            processMultiBulkResponse(h)
           case COLON_BYTE =>
             processInteger(h)
           case MINUS_BYTE =>

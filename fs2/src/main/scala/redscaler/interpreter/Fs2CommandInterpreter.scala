@@ -18,56 +18,58 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
 
   override def selectDatabase(databaseIndex: Int): Result[Unit] = {
     logger.info(s"Selecting database $databaseIndex")
-    runKeyCommand(s"SELECT", databaseIndex.toString).map(handleOkReply)
+    runKeyCommand(s"SELECT", databaseIndex.toString).map(handleOkResponse)
   }
 
   override def flushdb: Result[Unit] = {
     logger.info(s"Flushing db")
-    runNoArgCommand("flushdb").map(handleOkReply)
+    runNoArgCommand("flushdb").map(handleOkResponse)
   }
 
   override def get(key: String): Result[Option[Vector[Byte]]] = {
-    runKeyCommand("GET", key).map(CommandExecutor.handleReplyWithErrorHandling {
-      case BulkReply(body) => body
+    runKeyCommand("GET", key).map(CommandExecutor.handleResponseWithErrorHandling {
+      case BulkResponse(body) => body
     })
   }
 
   override def set(key: String, value: Vector[Byte]): Result[Unit] = {
-    runKeyCommand("SET", key, value).map(handleOkReply)
+    runKeyCommand("SET", key, value).map(handleOkResponse)
   }
 
   // List commands
   override def lpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("LPUSH", key, values.toList: _*).map(handleIntReply)
+    runKeyCommand("LPUSH", key, values.toList: _*).map(handleIntResponse)
   }
 
   override def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("LPUSHX", key, values.toList: _*).map(handleIntReply)
+    runKeyCommand("LPUSHX", key, values.toList: _*).map(handleIntResponse)
   }
 
   override def rpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("RPUSH", key, values.toList: _*).map(handleIntReply)
+    runKeyCommand("RPUSH", key, values.toList: _*).map(handleIntResponse)
   }
 
   override def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
-    runKeyCommand("RPUSHX", key, values.toList: _*).map(handleIntReply)
+    runKeyCommand("RPUSHX", key, values.toList: _*).map(handleIntResponse)
   }
 
   override def lrange(key: String, startIndex: Int, endIndex: Int): Result[List[Vector[Byte]]] = {
-    runKeyCommand("LRANGE", key, startIndex, endIndex).map(CommandExecutor.handleReplyWithErrorHandling {
-      case replies: ArrayReply =>
+    runKeyCommand("LRANGE", key, startIndex, endIndex).map(CommandExecutor.handleResponseWithErrorHandling {
+      case replies: ArrayResponse =>
         replies.replies.collect {
-          case BulkReply(bodyMaybe) => bodyMaybe.getOrElse(Vector.empty)
+          case BulkResponse(bodyMaybe) => bodyMaybe.getOrElse(Vector.empty)
         }
     })
   }
 
-  private def handleOkReply: ErrorOr[RedisResponse] => ErrorOr[Unit] = CommandExecutor.handleReplyWithErrorHandling {
-    case SimpleStringReply("OK") => ()
-  }
+  private def handleOkResponse: ErrorOr[RedisResponse] => ErrorOr[Unit] =
+    CommandExecutor.handleResponseWithErrorHandling {
+      case SimpleStringResponse("OK") => ()
+    }
 
-  private def handleIntReply: ErrorOr[RedisResponse] => ErrorOr[Int] = CommandExecutor.handleReplyWithErrorHandling {
-    case IntegerReply(num) => num.toInt
-  }
+  private def handleIntResponse: ErrorOr[RedisResponse] => ErrorOr[Int] =
+    CommandExecutor.handleResponseWithErrorHandling {
+      case IntegerResponse(num) => num.toInt
+    }
 
 }

@@ -13,7 +13,7 @@ class RedisResponseHandlerTest extends Specification with RedisResponseHandler[A
 
   val p1: Properties = new Properties("handle redis response") {
     property("handle integer response") = Prop.forAll { (i: Long) =>
-      getResponse(s""":$i\r\n""") === Vector(IntegerReply(i))
+      getResponse(s""":$i\r\n""") === Vector(IntegerResponse(i))
     }
 
     property("handle string response") = Prop.forAll { (bytes: List[Byte]) =>
@@ -21,11 +21,11 @@ class RedisResponseHandlerTest extends Specification with RedisResponseHandler[A
           RedisConstants.DOLLAR_BYTE ++= bytes.length.toString.getBytes ++= RedisConstants.CRLF ++=
           bytes ++= RedisConstants.CRLF
 
-      getResponseFromBytes(buffer.result().toArray) === Vector(BulkReply(Some(bytes.toVector)))
+      getResponseFromBytes(buffer.result().toArray) === Vector(BulkResponse(Some(bytes.toVector)))
     }
 
     property("handle error response") = Prop.forAllNoShrink(Gen.alphaStr) { (errorMessage: String) =>
-      getResponse(s"""-$errorMessage\r\n""") === Vector(ErrorReply(errorMessage))
+      getResponse(s"""-$errorMessage\r\n""") === Vector(ErrorResponse(errorMessage))
     }
   }
 

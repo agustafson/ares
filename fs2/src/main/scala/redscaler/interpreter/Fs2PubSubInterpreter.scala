@@ -16,8 +16,8 @@ class Fs2PubSubInterpreter[F[_]: Functor](redisClient: Stream[F, Socket[F]])(imp
     with PubSub.Interp[F] {
 
   override def publish(channelName: String, message: Vector[Byte]): F[ErrorOr[Int]] = {
-    runKeyCommand("publish", channelName, message).map(CommandExecutor.handleReplyWithErrorHandling {
-      case IntegerReply(receiverCount) => receiverCount.toInt
+    runKeyCommand("publish", channelName, message).map(CommandExecutor.handleResponseWithErrorHandling {
+      case IntegerResponse(receiverCount) => receiverCount.toInt
     })
   }
 
@@ -33,11 +33,13 @@ object SubscriptionResponseHandler {
   private val messageMsg: Vector[Byte]   = stringArgConverter("message")
 
   val handler: Function[ErrorOr[RedisResponse], ErrorOr[SubscriberResponse]] =
-    CommandExecutor.handleReplyWithErrorHandling {
-      case ArrayReply(BulkReply(Some(`subscribeMsg`)) :: BulkReply(Some(publishingChannelName)) :: IntegerReply(
+    CommandExecutor.handleResponseWithErrorHandling {
+      case ArrayResponse(
+          BulkResponse(Some(`subscribeMsg`)) :: BulkResponse(Some(publishingChannelName)) :: IntegerResponse(
             subscribedCount) :: Nil) =>
         Subscribe(publishingChannelName.asString, subscribedCount.toInt)
-      case ArrayReply(BulkReply(Some(`messageMsg`)) :: BulkReply(Some(publishingChannelName)) :: BulkReply(
+      case ArrayResponse(
+          BulkResponse(Some(`messageMsg`)) :: BulkResponse(Some(publishingChannelName)) :: BulkResponse(
             Some(messageContent)) :: Nil) =>
         Message(publishingChannelName.asString, messageContent)
     }

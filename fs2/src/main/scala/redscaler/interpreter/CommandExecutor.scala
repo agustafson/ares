@@ -71,27 +71,29 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
         }
       }
       .map {
-        case ArrayReply(
-            List(BulkReply(Some(messageType)), BulkReply(Some(channelName)), BulkReply(Some(messageBody)))) =>
+        case ArrayResponse(
+            List(BulkResponse(Some(messageType)), BulkResponse(Some(channelName)), BulkResponse(Some(messageBody)))) =>
           val subscriberResponse = SubscriberResponse(messageType.asString, channelName.asString, messageBody)
           logger.debug(s"got sub response: $subscriberResponse")
           Right(subscriberResponse)
-        case ArrayReply(
-            List(BulkReply(Some(messageType)), BulkReply(Some(channelName)), IntegerReply(subscriberCount))) =>
+        case ArrayResponse(
+            List(BulkResponse(Some(messageType)),
+                 BulkResponse(Some(channelName)),
+                 IntegerResponse(subscriberCount))) =>
           val subscriberResponse =
             SubscriberResponse(messageType.asString, channelName.asString, subscriberCount.toInt)
           logger.debug(s"got sub response: $subscriberResponse")
           Right(subscriberResponse)
-        case reply =>
-          logger.debug(s"got unexpected response: $reply")
-          Left(UnexpectedResponse(reply))
+        case response =>
+          logger.debug(s"got unexpected response: $response")
+          Left(UnexpectedResponse(response))
       }
   }
 
 }
 
 object CommandExecutor {
-  def handleReplyWithErrorHandling[A](
+  def handleResponseWithErrorHandling[A](
       handler: PartialFunction[RedisResponse, A]): Function[ErrorOr[RedisResponse], ErrorOr[A]] = {
     case Left(error) =>
       Left(error)

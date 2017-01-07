@@ -46,9 +46,9 @@ lazy val core = project
         Dependencies.cats,
         Dependencies.freasyMonad,
         Dependencies.scalaLogging,
-        Dependencies.scalacheck,
-        Dependencies.specs2Core,
-        Dependencies.specs2Scalacheck
+        Dependencies.scalacheck       % "test",
+        Dependencies.specs2Core       % "test",
+        Dependencies.specs2Scalacheck % "test"
       )
     },
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
@@ -68,10 +68,10 @@ lazy val fs2 = project
         Dependencies.fs2Io,
         Dependencies.fs2Cats,
         Dependencies.scalaLogging,
-        Dependencies.logbackClassic,
-        Dependencies.scalacheck,
-        Dependencies.specs2Core,
-        Dependencies.specs2Scalacheck
+        Dependencies.logbackClassic   % "test",
+        Dependencies.scalacheck       % "test",
+        Dependencies.specs2Core       % "test",
+        Dependencies.specs2Scalacheck % "test"
       )
     },
     addCompilerPlugin("org.scalamacros" % "paradise"       % "2.1.0" cross CrossVersion.full),

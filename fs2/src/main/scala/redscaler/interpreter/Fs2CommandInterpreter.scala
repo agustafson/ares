@@ -26,32 +26,30 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
     runNoArgCommand("flushdb").map(handleOkResponse)
   }
 
-  override def get(key: String): Result[Option[Vector[Byte]]] = {
-    runKeyCommand("GET", key).map(CommandExecutor.handleResponseWithErrorHandling {
-      case BulkResponse(body) => body
-    })
-  }
+  override def get(key: String): Result[Option[Vector[Byte]]] =
+    runKeyCommand("GET", key).map(handleBulkResponse)
 
-  override def set(key: String, value: Vector[Byte]): Result[Unit] = {
+  override def set(key: String, value: Vector[Byte]): Result[Unit] =
     runKeyCommand("SET", key, value).map(handleOkResponse)
-  }
+
+  override def getset(key: String, value: Vector[Byte]): F[ErrorOr[Option[Vector[Byte]]]] =
+    runKeyCommand("GETSET", key, value).map(handleBulkResponse)
+
+  override def append(key: String, value: Vector[Byte]): F[ErrorOr[Int]] =
+    runKeyCommand("APPEND", key, value).map(handleIntResponse)
 
   // List commands
-  override def lpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
+  override def lpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] =
     runKeyCommand("LPUSH", key, values.toList: _*).map(handleIntResponse)
-  }
 
-  override def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
+  override def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] =
     runKeyCommand("LPUSHX", key, values.toList: _*).map(handleIntResponse)
-  }
 
-  override def rpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
+  override def rpush(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] =
     runKeyCommand("RPUSH", key, values.toList: _*).map(handleIntResponse)
-  }
 
-  override def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] = {
+  override def rpushx(key: String, values: NonEmptyList[Vector[Byte]]): Result[Int] =
     runKeyCommand("RPUSHX", key, values.toList: _*).map(handleIntResponse)
-  }
 
   override def lrange(key: String, startIndex: Int, endIndex: Int): Result[List[Vector[Byte]]] = {
     runKeyCommand("LRANGE", key, startIndex, endIndex).map(CommandExecutor.handleResponseWithErrorHandling {
@@ -70,6 +68,11 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
   private def handleIntResponse: ErrorOr[RedisResponse] => ErrorOr[Int] =
     CommandExecutor.handleResponseWithErrorHandling {
       case IntegerResponse(num) => num.toInt
+    }
+
+  private def handleBulkResponse: ErrorOr[RedisResponse] => ErrorOr[Option[Vector[Byte]]] =
+    CommandExecutor.handleResponseWithErrorHandling {
+      case BulkResponse(body) => body
     }
 
 }

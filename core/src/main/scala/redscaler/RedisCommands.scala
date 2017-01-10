@@ -17,6 +17,10 @@ trait RedisCommands {
 
   def set(key: String, value: Vector[Byte]): CommandOp[ErrorOr[Unit]]
 
+  def getset(key: String, value: Vector[Byte]): CommandOp[ErrorOr[Option[Vector[Byte]]]]
+
+  def append(key: String, value: Vector[Byte]): CommandOp[ErrorOr[Int]]
+
   def lpush(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorOr[Int]]
 
   def lpushx(key: String, values: NonEmptyList[Vector[Byte]]): CommandOp[ErrorOr[Int]]

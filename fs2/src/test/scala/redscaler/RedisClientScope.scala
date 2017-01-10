@@ -2,7 +2,6 @@ package redscaler
 
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ExecutorService, Executors}
 
 import fs2.io.tcp
@@ -11,8 +10,6 @@ import fs2.{Strategy, Stream, Task}
 import org.specs2.specification.Scope
 
 trait RedisClientScope extends Scope {
-  val databaseCounter = new AtomicInteger(0)
-
   val threadName: String        = "redis.threadfactory"
   val executor: ExecutorService = Executors.newFixedThreadPool(8, Strategy.daemonThreadFactory(threadName))
   implicit val strategy         = Strategy.fromExecutor(executor)

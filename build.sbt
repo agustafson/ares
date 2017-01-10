@@ -67,6 +67,7 @@ lazy val fs2 = project
         Dependencies.fs2Cats,
         Dependencies.scalaLogging,
         Dependencies.logbackClassic   % "test",
+        Dependencies.scalaPool        % "test",
         Dependencies.scalacheck       % "test",
         Dependencies.specs2Core       % "test",
         Dependencies.specs2Scalacheck % "test"

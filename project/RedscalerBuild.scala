@@ -13,6 +13,7 @@ object RedscalerBuild {
     lazy val freasyMonad      = "com.github.thangiee"        %% "freasy-monad"      % "0.5.0"
     lazy val scalaLogging     = "com.typesafe.scala-logging" %% "scala-logging"     % "3.5.0"
     lazy val logbackClassic   = "ch.qos.logback"             % "logback-classic"    % "1.1.7"
+    lazy val scalaPool        = "io.github.andrebeat"        %% "scala-pool"        % "0.4.0"
     lazy val scalacheck       = "org.scalacheck"             %% "scalacheck"        % "1.13.4"
     lazy val specs2Core       = "org.specs2"                 %% "specs2-core"       % catsVersion
     lazy val specs2Scalacheck = "org.specs2"                 %% "specs2-scalacheck" % catsVersion

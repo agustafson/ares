@@ -174,7 +174,7 @@ object RedisReaderApp extends App with StrictLogging {
   implicit val scheduler        = Scheduler.fromFixedDaemonPool(2)
 
   val redisClient: Stream[Task, Socket[Task]] =
-    tcp.client[Task](new InetSocketAddress("127.0.0.1", 6379), reuseAddress = true, keepAlive = true, noDelay = true)
+    new ConnectionFactory[Task](new InetSocketAddress("127.0.0.1", 6379)).newRedisClient
 
   val futureResult = new RedisReader[Task](redisClient).run.unsafeRunAsyncFuture()
 

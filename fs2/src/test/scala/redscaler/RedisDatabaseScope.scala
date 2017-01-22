@@ -12,7 +12,7 @@ object RedisDatabaseScope extends RedisClientScope with StrictLogging {
 
   val dbPool: Pool[RedisDatabase] = {
     Pool(
-      15,
+      1,
       () => {
         val commandInterpreter: RedisCommands.Interp[Task] = new Fs2CommandInterpreter[Task](newRedisClient)
         RedisDatabase(commandInterpreter, dbCounter.getAndIncrement())

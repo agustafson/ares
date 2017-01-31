@@ -13,8 +13,9 @@ import redscaler.pubsub.SubscriberResponse
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-abstract class Fs2CommandExecutor[F[_]: Applicative: Catchable](val redisClient: Stream[F, Socket[F]])
-    extends RedisResponseHandler[F]
+class Fs2CommandExecutor[F[_]: Applicative: Catchable](val redisClient: Stream[F, Socket[F]])
+    extends CommandExecutor[F]
+    with RedisResponseHandler[F]
     with StrictLogging {
 
   val writeTimeout = Some(2.seconds)

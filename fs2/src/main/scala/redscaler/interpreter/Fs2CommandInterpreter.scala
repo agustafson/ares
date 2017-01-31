@@ -7,7 +7,7 @@ import fs2.util.{Applicative, Catchable}
 import redscaler._
 import redscaler.interpreter.ArgConverters._
 
-class Fs2CommandInterpreter[F[_]: Applicative: Catchable](commandExecutor: Fs2CommandExecutor[F])
+class Fs2CommandInterpreter[F[_]: Applicative: Catchable](commandExecutor: CommandExecutor[F])
     extends RedisCommands.Interp[F]
     with StrictLogging {
 

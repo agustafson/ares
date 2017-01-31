@@ -1,10 +1,8 @@
 package redscaler
 
 import cats.data.NonEmptyList
-import cats.free._
+import cats.free.Free
 import freasymonad.cats.free
-
-import scala.language.higherKinds
 
 @free
 trait RedisCommands {

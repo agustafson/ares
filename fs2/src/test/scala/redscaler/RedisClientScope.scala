@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.{ExecutorService, Executors}
 
-import fs2.io.tcp
 import fs2.io.tcp.Socket
 import fs2.{Strategy, Stream, Task}
 import org.specs2.specification.Scope

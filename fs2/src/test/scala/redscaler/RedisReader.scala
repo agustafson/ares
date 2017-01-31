@@ -5,7 +5,6 @@ import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.{ExecutorService, Executors}
 
 import com.typesafe.scalalogging.StrictLogging
-import fs2.io.tcp
 import fs2.io.tcp.Socket
 import fs2.util.{Applicative, Async, Catchable}
 import fs2.{NonEmptyChunk, Pipe, Pull, Scheduler, Strategy, Stream, Task}

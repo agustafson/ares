@@ -13,19 +13,23 @@ val baseSettings = Seq(
 
 val scalacSettings = Seq(
   scalacOptions ++= Seq(
+    "-deprecation",
     "-encoding",
     "UTF-8", // 2 args
     "-feature",
-    "-deprecation",
     "-language:existentials",
     "-language:higherKinds",
     "-language:implicitConversions",
     "-language:experimental.macros",
     "-unchecked",
+    "-Xfatal-warnings",
     "-Xlint",
     "-Yno-adapted-args",
-    //"-Ywarn-dead-code",
-    "-Ywarn-value-discard"
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-value-discard",
+    "-Xfuture",
+    "-Ywarn-unused-import"
   ),
   scalacOptions in (Compile, doc) ++= Seq(
     "-groups",

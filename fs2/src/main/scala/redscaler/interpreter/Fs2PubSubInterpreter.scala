@@ -3,7 +3,6 @@ package redscaler.interpreter
 import java.nio.channels.AsynchronousChannelGroup
 
 import fs2.Stream
-import fs2.io.tcp.Socket
 import fs2.util.syntax._
 import fs2.util.{Async, Functor}
 import redscaler._

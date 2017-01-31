@@ -2,17 +2,16 @@ package redscaler.interpreter
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.StrictLogging
-import fs2.Stream
-import fs2.io.tcp.Socket
 import fs2.util.syntax._
 import fs2.util.{Applicative, Catchable}
 import redscaler._
 import redscaler.interpreter.ArgConverters._
 
-class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F, Socket[F]])
-    extends CommandExecutor[F](redisClient)
-    with RedisCommands.Interp[F]
+class Fs2CommandInterpreter[F[_]: Applicative: Catchable](commandExecutor: Fs2CommandExecutor[F])
+    extends RedisCommands.Interp[F]
     with StrictLogging {
+
+  import commandExecutor._
 
   type Result[A] = F[ErrorOr[A]]
 
@@ -52,7 +51,7 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
     runKeyCommand("RPUSHX", key, values.toList: _*).map(handleIntResponse)
 
   override def lrange(key: String, startIndex: Int, endIndex: Int): Result[List[Vector[Byte]]] = {
-    runKeyCommand("LRANGE", key, startIndex, endIndex).map(CommandExecutor.handleResponseWithErrorHandling {
+    runKeyCommand("LRANGE", key, startIndex, endIndex).map(Fs2CommandExecutor.handleResponseWithErrorHandling {
       case replies: ArrayResponse =>
         replies.replies.collect {
           case BulkResponse(bodyMaybe) => bodyMaybe.getOrElse(Vector.empty)
@@ -61,17 +60,17 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](redisClient: Stream[F,
   }
 
   private def handleOkResponse: ErrorOr[RedisResponse] => ErrorOr[Unit] =
-    CommandExecutor.handleResponseWithErrorHandling {
+    Fs2CommandExecutor.handleResponseWithErrorHandling {
       case SimpleStringResponse("OK") => ()
     }
 
   private def handleIntResponse: ErrorOr[RedisResponse] => ErrorOr[Int] =
-    CommandExecutor.handleResponseWithErrorHandling {
+    Fs2CommandExecutor.handleResponseWithErrorHandling {
       case IntegerResponse(num) => num.toInt
     }
 
   private def handleBulkResponse: ErrorOr[RedisResponse] => ErrorOr[Option[Vector[Byte]]] =
-    CommandExecutor.handleResponseWithErrorHandling {
+    Fs2CommandExecutor.handleResponseWithErrorHandling {
       case BulkResponse(body) => body
     }
 

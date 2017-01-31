@@ -13,7 +13,7 @@ import redscaler.pubsub.SubscriberResponse
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: Stream[F, Socket[F]])
+abstract class Fs2CommandExecutor[F[_]: Applicative: Catchable](val redisClient: Stream[F, Socket[F]])
     extends RedisResponseHandler[F]
     with StrictLogging {
 
@@ -21,15 +21,15 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
   val readTimeout  = Some(2.seconds)
   val maxBytesRead = 1024
 
-  protected def runKeyCommand(command: String, key: String, args: Vector[Byte]*): F[ErrorOr[RedisResponse]] = {
+  def runKeyCommand(command: String, key: String, args: Vector[Byte]*): F[ErrorOr[RedisResponse]] = {
     runCommand(command, stringArgConverter(key) +: args)
   }
 
-  protected def runNoArgCommand(command: String): F[ErrorOr[RedisResponse]] = {
+  def runNoArgCommand(command: String): F[ErrorOr[RedisResponse]] = {
     runCommand(command, Seq.empty)
   }
 
-  protected def runCommand[T](command: String, args: Seq[Vector[Byte]]): F[ErrorOr[RedisResponse]] = {
+  def runCommand[T](command: String, args: Seq[Vector[Byte]]): F[ErrorOr[RedisResponse]] = {
     val writeAndRead: (Socket[F]) => Stream[F, Byte] = { socket =>
       Stream
         .chunk(createCommand(command, args))
@@ -45,7 +45,7 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
       .map(_.fold[ErrorOr[RedisResponse]](Left(EmptyResponse))(Right(_)))
   }
 
-  protected def createCommand(command: String, args: Seq[Vector[Byte]]): Chunk[Byte] = {
+  def createCommand(command: String, args: Seq[Vector[Byte]]): Chunk[Byte] = {
     val bytes = new mutable.ListBuffer() +=
         ASTERISK_BYTE ++= intCrlf(args.length + 1) +=
         DOLLAR_BYTE ++= intCrlf(command.length) ++=
@@ -57,8 +57,7 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
     Chunk.bytes(bytes.result().toArray)
   }
 
-  protected def subscribeAndPull(command: Chunk[Byte])(
-      implicit async: Async[F]): Stream[F, ErrorOr[SubscriberResponse]] = {
+  def subscribeAndPull(command: Chunk[Byte])(implicit async: Async[F]): Stream[F, ErrorOr[SubscriberResponse]] = {
     val writeCommand: (Socket[F]) => Stream[F, Socket[F]] = { socket: Socket[F] =>
       Stream.chunk(command).to(socket.writes(None)).drain ++ Stream.emit(socket)
     }
@@ -92,7 +91,7 @@ abstract class CommandExecutor[F[_]: Applicative: Catchable](val redisClient: St
 
 }
 
-object CommandExecutor {
+object Fs2CommandExecutor {
   def handleResponseWithErrorHandling[A](
       handler: PartialFunction[RedisResponse, A]): Function[ErrorOr[RedisResponse], ErrorOr[A]] = {
     case Left(error) =>

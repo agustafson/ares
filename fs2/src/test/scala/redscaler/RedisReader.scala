@@ -10,7 +10,7 @@ import fs2.io.tcp.Socket
 import fs2.util.{Applicative, Async, Catchable}
 import fs2.{NonEmptyChunk, Pipe, Pull, Scheduler, Strategy, Stream, Task}
 import redscaler.interpreter.ArgConverters._
-import redscaler.interpreter.{CommandExecutor, _}
+import redscaler.interpreter.{Fs2CommandExecutor$, _}
 import redscaler.pubsub.SubscriberResponse
 
 import scala.concurrent.Await
@@ -19,7 +19,7 @@ import scala.util.Try
 
 class RedisReader[F[_]: Applicative: Catchable](
     redisClient: Stream[F, Socket[F]])(implicit async: Async[F], strategy: Strategy, scheduler: Scheduler)
-    extends CommandExecutor[F](redisClient) {
+    extends Fs2CommandExecutor[F](redisClient) {
   def run: F[Vector[Either[UnexpectedResponse, SubscriberResponse]]] = {
     val writeCommand: (Socket[F]) => Stream[F, Socket[F]] = { socket: Socket[F] =>
       Stream.chunk(createCommand("SUBSCRIBE", Seq("ch1", "ch2"))).to(socket.writes(None)).drain ++

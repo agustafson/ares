@@ -1,13 +1,13 @@
-package redscaler.interpreter
+package redscaler
 
 import com.typesafe.scalalogging.StrictLogging
 import fs2.io.tcp.Socket
 import fs2.util.syntax._
 import fs2.util.{Applicative, Async, Catchable}
 import fs2.{Chunk, Pull, Stream}
-import redscaler._
 import redscaler.interpreter.ArgConverters.stringArgConverter
 import redscaler.interpreter.RedisConstants._
+import redscaler.interpreter.RedisResponseHandler
 import redscaler.pubsub.SubscriberResponse
 
 import scala.collection.mutable

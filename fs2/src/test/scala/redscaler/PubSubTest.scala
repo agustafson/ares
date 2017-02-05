@@ -3,7 +3,7 @@ package redscaler
 import fs2.{Handle, Pull, Task}
 import org.specs2.mutable.Specification
 import redscaler.interpreter.ArgConverters._
-import redscaler.interpreter.{Fs2Connection, Fs2PubSubInterpreter}
+import redscaler.interpreter.Fs2PubSubInterpreter
 import redscaler.pubsub.{Message, Subscribe, SubscriberResponse}
 
 import scala.collection.mutable.ArrayBuffer

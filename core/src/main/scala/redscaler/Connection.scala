@@ -1,6 +1,4 @@
-package redscaler.interpreter
-
-import redscaler.{ErrorOr, RedisResponse}
+package redscaler
 
 trait Connection[F[_]] {
   def runKeyCommand(command: String, key: String, args: Vector[Byte]*): F[ErrorOr[RedisResponse]]

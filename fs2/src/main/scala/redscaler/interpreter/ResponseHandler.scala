@@ -6,7 +6,7 @@ import redscaler._
 
 import scala.annotation.tailrec
 
-trait RedisResponseHandler[F[_]] extends StrictLogging {
+trait ResponseHandler[F[_]] extends StrictLogging {
 
   import RedisConstants._
 

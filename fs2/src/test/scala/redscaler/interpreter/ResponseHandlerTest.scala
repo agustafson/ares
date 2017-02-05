@@ -9,7 +9,7 @@ import redscaler._
 
 import scala.collection.mutable.ListBuffer
 
-class RedisResponseHandlerTest extends Specification with RedisResponseHandler[Attempt] with ScalaCheck {
+class ResponseHandlerTest extends Specification with ResponseHandler[Attempt] with ScalaCheck {
 
   val p1: Properties = new Properties("handle redis response") {
     property("handle integer response") = Prop.forAll { (i: Long) =>

@@ -7,7 +7,7 @@ import fs2.util.{Applicative, Async, Catchable}
 import fs2.{Chunk, Pull, Stream}
 import redscaler.interpreter.ArgConverters.stringArgConverter
 import redscaler.interpreter.RedisConstants._
-import redscaler.interpreter.RedisResponseHandler
+import redscaler.interpreter.ResponseHandler
 import redscaler.pubsub.SubscriberResponse
 
 import scala.collection.mutable
@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 
 class Fs2Connection[F[_]: Applicative: Catchable](val redisClient: Stream[F, Socket[F]])
     extends Connection[F]
-    with RedisResponseHandler[F]
+    with ResponseHandler[F]
     with StrictLogging {
 
   val writeTimeout = Some(2.seconds)

@@ -9,14 +9,14 @@ import redscaler._
 import redscaler.interpreter.ArgConverters._
 import redscaler.pubsub.{Message, PubSub, Subscribe, SubscriberResponse}
 
-class Fs2PubSubInterpreter[F[_]: Functor](commandExecutor: Fs2CommandExecutor[F])(implicit asyncM: Async[F],
-                                                                                  tcpACG: AsynchronousChannelGroup)
+class Fs2PubSubInterpreter[F[_]: Functor](connection: Fs2Connection[F])(implicit asyncM: Async[F],
+                                                                        tcpACG: AsynchronousChannelGroup)
     extends PubSub.Interp[F] {
 
-  import commandExecutor._
+  import connection._
 
   override def publish(channelName: String, message: Vector[Byte]): F[ErrorOr[Int]] = {
-    runKeyCommand("publish", channelName, message).map(Fs2CommandExecutor.handleResponseWithErrorHandling {
+    runKeyCommand("publish", channelName, message).map(Fs2Connection.handleResponseWithErrorHandling {
       case IntegerResponse(receiverCount) => receiverCount.toInt
     })
   }
@@ -33,7 +33,7 @@ object SubscriptionResponseHandler {
   private val messageMsg: Vector[Byte]   = stringArgConverter("message")
 
   val handler: Function[ErrorOr[RedisResponse], ErrorOr[SubscriberResponse]] =
-    Fs2CommandExecutor.handleResponseWithErrorHandling {
+    Fs2Connection.handleResponseWithErrorHandling {
       case ArrayResponse(
           BulkResponse(Some(`subscribeMsg`)) :: BulkResponse(Some(publishingChannelName)) :: IntegerResponse(
             subscribedCount) :: Nil) =>

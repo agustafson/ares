@@ -17,9 +17,9 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 class RedisReader[F[_]: Applicative: Catchable](
-    commandExecutor: Fs2CommandExecutor[F])(implicit async: Async[F], strategy: Strategy, scheduler: Scheduler)
+    connection: Fs2Connection[F])(implicit async: Async[F], strategy: Strategy, scheduler: Scheduler)
     extends StrictLogging {
-  import commandExecutor._
+  import connection._
 
   def run: F[Vector[Either[UnexpectedResponse, SubscriberResponse]]] = {
     val writeCommand: (Socket[F]) => Stream[F, Socket[F]] = { socket: Socket[F] =>
@@ -177,7 +177,7 @@ object RedisReaderApp extends App with StrictLogging {
   val redisClient: Stream[Task, Socket[Task]] =
     new ConnectionFactory[Task](new InetSocketAddress("127.0.0.1", 6379)).newRedisClient
 
-  val futureResult = new RedisReader[Task](new Fs2CommandExecutor[Task](redisClient)).run.unsafeRunAsyncFuture()
+  val futureResult = new RedisReader[Task](new Fs2Connection[Task](redisClient)).run.unsafeRunAsyncFuture()
 
   Thread.sleep(30000)
 

@@ -13,8 +13,8 @@ import redscaler.pubsub.SubscriberResponse
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-class Fs2CommandExecutor[F[_]: Applicative: Catchable](val redisClient: Stream[F, Socket[F]])
-    extends CommandExecutor[F]
+class Fs2Connection[F[_]: Applicative: Catchable](val redisClient: Stream[F, Socket[F]])
+    extends Connection[F]
     with RedisResponseHandler[F]
     with StrictLogging {
 
@@ -92,7 +92,7 @@ class Fs2CommandExecutor[F[_]: Applicative: Catchable](val redisClient: Stream[F
 
 }
 
-object Fs2CommandExecutor {
+object Fs2Connection {
   def handleResponseWithErrorHandling[A](
       handler: PartialFunction[RedisResponse, A]): Function[ErrorOr[RedisResponse], ErrorOr[A]] = {
     case Left(error) =>

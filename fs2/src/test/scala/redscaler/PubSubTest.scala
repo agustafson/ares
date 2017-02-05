@@ -3,7 +3,7 @@ package redscaler
 import fs2.{Handle, Pull, Task}
 import org.specs2.mutable.Specification
 import redscaler.interpreter.ArgConverters._
-import redscaler.interpreter.{Fs2CommandExecutor, Fs2PubSubInterpreter}
+import redscaler.interpreter.{Fs2Connection, Fs2PubSubInterpreter}
 import redscaler.pubsub.{Message, Subscribe, SubscriberResponse}
 
 import scala.collection.mutable.ArrayBuffer
@@ -13,9 +13,9 @@ class PubSubTest extends Specification {
 
   trait PubSubScope extends RedisClientScope {
     val publisher: Fs2PubSubInterpreter[Task] =
-      new Fs2PubSubInterpreter[Task](new Fs2CommandExecutor[Task](newRedisClient))
+      new Fs2PubSubInterpreter[Task](new Fs2Connection[Task](newRedisClient))
     val subscriber: Fs2PubSubInterpreter[Task] =
-      new Fs2PubSubInterpreter[Task](new Fs2CommandExecutor[Task](newRedisClient))
+      new Fs2PubSubInterpreter[Task](new Fs2Connection[Task](newRedisClient))
   }
 
 //  "publish with no subscribers" in new PubSubScope {

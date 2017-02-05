@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.scalalogging.StrictLogging
 import fs2.Task
 import io.github.andrebeat.pool._
-import redscaler.interpreter.{Fs2CommandExecutor, Fs2CommandInterpreter}
+import redscaler.interpreter.{Fs2Connection, Fs2CommandInterpreter}
 
 object RedisDatabaseScope extends RedisClientScope with StrictLogging {
   private val dbCounter = new AtomicInteger(1)
@@ -15,7 +15,7 @@ object RedisDatabaseScope extends RedisClientScope with StrictLogging {
       1,
       () => {
         val commandInterpreter: RedisCommands.Interp[Task] =
-          new Fs2CommandInterpreter[Task](new Fs2CommandExecutor[Task](newRedisClient))
+          new Fs2CommandInterpreter[Task](new Fs2Connection[Task](newRedisClient))
         RedisDatabase(commandInterpreter, dbCounter.getAndIncrement())
       }
     )

@@ -6,7 +6,6 @@ import fs2.util.syntax._
 import fs2.util.{Applicative, Async, Catchable}
 import fs2.{Chunk, Pull, Stream}
 import redscaler.ByteVector._
-import redscaler.interpreter.ArgConverters.stringArgConverter
 import redscaler.interpreter.RedisConstants._
 import redscaler.interpreter.ResponseHandler
 import redscaler.pubsub.SubscriberResponse
@@ -23,18 +22,10 @@ class Fs2Connection[F[_]: Applicative: Catchable](val redisClient: Stream[F, Soc
   val readTimeout  = Some(2.seconds)
   val maxBytesRead = 1024
 
-  def runKeyCommand(command: String, key: String, args: Vector[Byte]*): F[ErrorOr[RedisResponse]] = {
-    runCommand(command, stringArgConverter(key) +: args)
-  }
-
-  def runNoArgCommand(command: String): F[ErrorOr[RedisResponse]] = {
-    runCommand(command, Seq.empty)
-  }
-
-  def runCommand[T](command: String, args: Seq[Vector[Byte]]): F[ErrorOr[RedisResponse]] = {
+  def execute[T](command: Command): F[ErrorOr[RedisResponse]] = {
     val writeAndRead: (Socket[F]) => Stream[F, Byte] = { socket =>
       Stream
-        .chunk(createCommand(command, args))
+        .chunk(toChunk(command))
         .to(socket.writes(writeTimeout))
         .drain
         .onFinalize(socket.endOfOutput) ++
@@ -47,12 +38,12 @@ class Fs2Connection[F[_]: Applicative: Catchable](val redisClient: Stream[F, Soc
       .map(_.fold[ErrorOr[RedisResponse]](Left(EmptyResponse))(Right(_)))
   }
 
-  def createCommand(command: String, args: Seq[Vector[Byte]]): Chunk[Byte] = {
+  def toChunk(command: Command): Chunk[Byte] = {
     val bytes = new mutable.ListBuffer() +=
-        ASTERISK_BYTE ++= intCrlf(args.length + 1) +=
-        DOLLAR_BYTE ++= intCrlf(command.length) ++=
-        command.getBytes ++= CRLF ++=
-        args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
+        ASTERISK_BYTE ++= intCrlf(command.args.length + 1) +=
+        DOLLAR_BYTE ++= intCrlf(command.commandName.length) ++=
+        command.commandName.getBytes ++= CRLF ++=
+        command.args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
 
     logger.trace(s"command created: ${bytes.result().toVector.asString}")
 

@@ -18,13 +18,13 @@ class Fs2PubSubInterpreter[F[_]: Functor](connection: Fs2Connection[F])(implicit
   import connection._
 
   override def publish(channelName: String, message: Vector[Byte]): F[ErrorOr[Int]] = {
-    runKeyCommand("publish", channelName, message).map(handleResponseWithErrorHandling {
+    execute(Command.keyCommand("publish", channelName, Seq(message))).map(handleResponseWithErrorHandling {
       case IntegerResponse(receiverCount) => receiverCount.toInt
     })
   }
 
   def subscribe(channelName: String): Stream[F, ErrorOr[SubscriberResponse]] = {
-    subscribeAndPull(createCommand("subscribe", Seq(channelName)))
+    subscribeAndPull(toChunk(Command.keyCommand("subscribe", channelName, Seq.empty)))
   }
 
   override def unsubscribe(channelName: String): F[Unit] = ???

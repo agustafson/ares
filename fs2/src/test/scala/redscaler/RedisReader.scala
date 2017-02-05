@@ -23,13 +23,13 @@ class RedisReader[F[_]: Applicative: Catchable](
 
   def run: F[Vector[Either[UnexpectedResponse, SubscriberResponse]]] = {
     val writeCommand: (Socket[F]) => Stream[F, Socket[F]] = { socket: Socket[F] =>
-      Stream.chunk(createCommand("SUBSCRIBE", Seq("ch1", "ch2"))).to(socket.writes(None)).drain ++
+      Stream.chunk(toChunk(Command("SUBSCRIBE", Seq("ch1", "ch2")))).to(socket.writes(None)).drain ++
         Stream.emit(socket)
     //.onFinalize[F](socket.endOfOutput)
     }
 
     val writeAndPull: (Socket[F]) => Stream[F, NonEmptyChunk[Byte]] = { socket: Socket[F] =>
-      Stream.chunk(createCommand("SUBSCRIBE", Seq("ch1", "ch2"))).to(socket.writes(None)).drain ++
+      Stream.chunk(toChunk(Command("SUBSCRIBE", Seq("ch1", "ch2")))).to(socket.writes(None)).drain ++
         socket.reads(16, None).chunks.mapChunks { chunks =>
           logger.info(s"chunks: $chunks"); chunks
         }

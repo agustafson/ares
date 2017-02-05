@@ -5,6 +5,7 @@ import fs2.io.tcp.Socket
 import fs2.util.syntax._
 import fs2.util.{Applicative, Async, Catchable}
 import fs2.{Chunk, Pull, Stream}
+import redscaler.ByteVector._
 import redscaler.interpreter.ArgConverters.stringArgConverter
 import redscaler.interpreter.RedisConstants._
 import redscaler.interpreter.ResponseHandler
@@ -90,14 +91,4 @@ class Fs2Connection[F[_]: Applicative: Catchable](val redisClient: Stream[F, Soc
       }
   }
 
-}
-
-object Fs2Connection {
-  def handleResponseWithErrorHandling[A](
-      handler: PartialFunction[RedisResponse, A]): Function[ErrorOr[RedisResponse], ErrorOr[A]] = {
-    case Left(error) =>
-      Left(error)
-    case Right(result) =>
-      handler.lift(result).fold[ErrorOr[A]](Left(UnexpectedResponse(result)))(Right(_))
-  }
 }

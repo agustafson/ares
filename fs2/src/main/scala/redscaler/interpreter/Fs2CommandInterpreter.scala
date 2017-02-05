@@ -6,6 +6,7 @@ import fs2.util.syntax._
 import fs2.util.{Applicative, Catchable}
 import redscaler._
 import redscaler.interpreter.ArgConverters._
+import redscaler.interpreter.ResponseHandler.handleResponseWithErrorHandling
 
 class Fs2CommandInterpreter[F[_]: Applicative: Catchable](connection: Connection[F])
     extends RedisCommands.Interp[F]
@@ -51,7 +52,7 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](connection: Connection
     runKeyCommand("RPUSHX", key, values.toList: _*).map(handleIntResponse)
 
   override def lrange(key: String, startIndex: Int, endIndex: Int): Result[List[Vector[Byte]]] = {
-    runKeyCommand("LRANGE", key, startIndex, endIndex).map(Fs2Connection.handleResponseWithErrorHandling {
+    runKeyCommand("LRANGE", key, startIndex, endIndex).map(handleResponseWithErrorHandling {
       case replies: ArrayResponse =>
         replies.replies.collect {
           case BulkResponse(bodyMaybe) => bodyMaybe.getOrElse(Vector.empty)
@@ -60,17 +61,17 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](connection: Connection
   }
 
   private def handleOkResponse: ErrorOr[RedisResponse] => ErrorOr[Unit] =
-    Fs2Connection.handleResponseWithErrorHandling {
+    handleResponseWithErrorHandling {
       case SimpleStringResponse("OK") => ()
     }
 
   private def handleIntResponse: ErrorOr[RedisResponse] => ErrorOr[Int] =
-    Fs2Connection.handleResponseWithErrorHandling {
+    handleResponseWithErrorHandling {
       case IntegerResponse(num) => num.toInt
     }
 
   private def handleBulkResponse: ErrorOr[RedisResponse] => ErrorOr[Option[Vector[Byte]]] =
-    Fs2Connection.handleResponseWithErrorHandling {
+    handleResponseWithErrorHandling {
       case BulkResponse(body) => body
     }
 

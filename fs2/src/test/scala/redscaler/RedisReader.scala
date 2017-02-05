@@ -8,8 +8,8 @@ import com.typesafe.scalalogging.StrictLogging
 import fs2.io.tcp.Socket
 import fs2.util.{Applicative, Async, Catchable}
 import fs2.{NonEmptyChunk, Pipe, Pull, Scheduler, Strategy, Stream, Task}
+import redscaler.ByteVector._
 import redscaler.interpreter.ArgConverters._
-import redscaler.interpreter._
 import redscaler.pubsub.SubscriberResponse
 
 import scala.concurrent.Await

@@ -7,7 +7,9 @@ import fs2.util.syntax._
 import fs2.util.{Async, Functor}
 import redscaler._
 import redscaler.interpreter.ArgConverters._
+import redscaler.interpreter.ResponseHandler.handleResponseWithErrorHandling
 import redscaler.pubsub.{Message, PubSub, Subscribe, SubscriberResponse}
+import redscaler.ByteVector._
 
 class Fs2PubSubInterpreter[F[_]: Functor](connection: Fs2Connection[F])(implicit asyncM: Async[F],
                                                                         tcpACG: AsynchronousChannelGroup)
@@ -16,7 +18,7 @@ class Fs2PubSubInterpreter[F[_]: Functor](connection: Fs2Connection[F])(implicit
   import connection._
 
   override def publish(channelName: String, message: Vector[Byte]): F[ErrorOr[Int]] = {
-    runKeyCommand("publish", channelName, message).map(Fs2Connection.handleResponseWithErrorHandling {
+    runKeyCommand("publish", channelName, message).map(handleResponseWithErrorHandling {
       case IntegerResponse(receiverCount) => receiverCount.toInt
     })
   }
@@ -32,8 +34,8 @@ object SubscriptionResponseHandler {
   private val subscribeMsg: Vector[Byte] = stringArgConverter("subscribe")
   private val messageMsg: Vector[Byte]   = stringArgConverter("message")
 
-  val handler: Function[ErrorOr[RedisResponse], ErrorOr[SubscriberResponse]] =
-    Fs2Connection.handleResponseWithErrorHandling {
+  val handler: ErrorOr[RedisResponse] => ErrorOr[SubscriberResponse] =
+    handleResponseWithErrorHandling {
       case ArrayResponse(
           BulkResponse(Some(`subscribeMsg`)) :: BulkResponse(Some(publishingChannelName)) :: IntegerResponse(
             subscribedCount) :: Nil) =>

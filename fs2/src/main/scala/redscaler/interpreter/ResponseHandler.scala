@@ -3,6 +3,7 @@ package redscaler.interpreter
 import com.typesafe.scalalogging.StrictLogging
 import fs2.{Handle, Pull}
 import redscaler._
+import redscaler.ByteVector._
 
 import scala.annotation.tailrec
 
@@ -127,5 +128,15 @@ trait ResponseHandler[F[_]] extends StrictLogging {
             Pull.fail(UnexpectedResponseType(b.toChar))
         }
     }
+  }
+}
+
+object ResponseHandler {
+  def handleResponseWithErrorHandling[A](
+      handler: PartialFunction[RedisResponse, A]): ErrorOr[RedisResponse] => ErrorOr[A] = {
+    case Left(error) =>
+      Left(error)
+    case Right(result) =>
+      handler.lift(result).fold[ErrorOr[A]](Left(UnexpectedResponse(result)))(Right(_))
   }
 }

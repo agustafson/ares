@@ -9,7 +9,7 @@ import redscaler.interpreter.ArgConverters._
 import redscaler.interpreter.ResponseHandler.handleResponseWithErrorHandling
 
 class Fs2CommandInterpreter[F[_]: Applicative: Catchable](connection: Connection[F])
-    extends RedisCommands.Interp[F]
+    extends ConnectionOps.Interp[F]
     with StrictLogging {
 
   import connection._

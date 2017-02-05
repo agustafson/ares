@@ -3,7 +3,7 @@ package redscaler
 import org.scalacheck.Properties
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
-import redscaler.RedisCommands.ops
+import redscaler.ConnectionOps.ops
 
 class StringCommandsTest extends Specification with RedisClientScope with ScalaCheck {
   sequential

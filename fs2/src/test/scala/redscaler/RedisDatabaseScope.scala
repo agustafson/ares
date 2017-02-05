@@ -14,7 +14,7 @@ object RedisDatabaseScope extends RedisClientScope with StrictLogging {
     Pool(
       1,
       () => {
-        val commandInterpreter: RedisCommands.Interp[Task] =
+        val commandInterpreter: ConnectionOps.Interp[Task] =
           new Fs2CommandInterpreter[Task](new Fs2Connection[Task](newRedisClient))
         RedisDatabase(commandInterpreter, dbCounter.getAndIncrement())
       }
@@ -24,7 +24,7 @@ object RedisDatabaseScope extends RedisClientScope with StrictLogging {
   logger.info(s"current pool size: ${dbPool.size()}, capacity: ${dbPool.capacity()}")
 }
 
-case class RedisDatabase(commandInterpreter: RedisCommands.Interp[Task], dbIndex: Int) {
+case class RedisDatabase(commandInterpreter: ConnectionOps.Interp[Task], dbIndex: Int) {
   def selectDatabase(): Unit = handleError("select", commandInterpreter.selectDatabase(dbIndex))
 
   def flushDb(): Unit = handleError("flush", commandInterpreter.flushdb)

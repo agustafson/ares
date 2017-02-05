@@ -5,7 +5,7 @@ import cats.syntax.foldable._
 import org.scalacheck.{Arbitrary, Gen, Properties}
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
-import redscaler.RedisCommands._
+import redscaler.ConnectionOps._
 import redscaler.interpreter.ArgConverters
 
 class ListCommandsTest extends Specification with RedisClientScope with ScalaCheck {

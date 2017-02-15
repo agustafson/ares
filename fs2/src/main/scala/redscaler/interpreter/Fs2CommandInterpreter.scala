@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.StrictLogging
 import fs2.util.syntax._
 import fs2.util.{Applicative, Catchable}
 import redscaler._
+import redscaler.ConnectionOps.ops
 import redscaler.interpreter.ArgConverters._
 import redscaler.interpreter.ResponseHandler.handleResponseWithErrorHandling
 
@@ -18,7 +19,8 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](connection: Connection
 
   override def selectDatabase(databaseIndex: Int): Result[Unit] = {
     logger.info(s"Selecting database $databaseIndex")
-    execute(Command.keyCommand(s"SELECT", databaseIndex.toString, Seq.empty)).map(handleOkResponse)
+    execute(ops.selectDatabase(databaseIndex))
+//    execute(Command.keyCommand(s"SELECT", databaseIndex.toString, Seq.empty)).map(handleOkResponse)
   }
 
   override def flushdb: Result[Unit] = {

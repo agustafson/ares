@@ -22,7 +22,7 @@ class Fs2Connection[F[_]: Applicative: Catchable](val redisClient: Stream[F, Soc
   val readTimeout  = Some(2.seconds)
   val maxBytesRead = 1024
 
-  def execute[T](command: Command): F[ErrorOr[RedisResponse]] = {
+  def execute(command: Command): F[ErrorOr[RedisResponse]] = {
     val writeAndRead: (Socket[F]) => Stream[F, Byte] = { socket =>
       Stream
         .chunk(toChunk(command))

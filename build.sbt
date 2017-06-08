@@ -53,7 +53,7 @@ lazy val core = project
         Dependencies.specs2Scalacheck % "test"
       )
     },
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+    addCompilerPlugin(Dependencies.macroParadise cross CrossVersion.full)
   ))
 
 lazy val fs2 = project
@@ -77,6 +77,6 @@ lazy val fs2 = project
         Dependencies.specs2Scalacheck % "test"
       )
     },
-    addCompilerPlugin("org.scalamacros" % "paradise"       % "2.1.0" cross CrossVersion.full),
-    addCompilerPlugin("org.spire-math"  % "kind-projector" % "0.9.3" cross CrossVersion.binary)
+    addCompilerPlugin(Dependencies.macroParadise cross CrossVersion.full),
+    addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.3" cross CrossVersion.binary)
   ))

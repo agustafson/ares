@@ -7,8 +7,7 @@ scalaVersion := "2.12.1"
 
 val baseSettings = Seq(
   organization := "io.redscaler",
-  scalaVersion := "2.12.1",
-  scalafmtConfig in ThisBuild := Some(file(".scalafmt.conf"))
+  scalaVersion := "2.12.1"
 )
 
 val scalacSettings = Seq(

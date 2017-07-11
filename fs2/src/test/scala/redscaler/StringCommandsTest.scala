@@ -12,7 +12,7 @@ class StringCommandsTest extends Specification with RedisClientScope with ScalaC
     "get unknown key returns None" >> prop { (key: String) =>
       withRepository { interpreter =>
         eventually {
-          interpreter.runCommand(ops.get(key)) ==== Right(None)
+          interpreter.runCommand(ops.get(key)) ==== Right(BulkResponse(None))
         }
       }
     }
@@ -24,8 +24,8 @@ class StringCommandsTest extends Specification with RedisClientScope with ScalaC
           getResult <- ops.get(key)
         } yield (setResult, getResult)
         val (setResult, getResult) = interpreter.runCommand(command)
-        setResult ==== Right(())
-        getResult ==== Right(Some(value))
+        setResult ==== Right(OkStringResponse)
+        getResult ==== Right(BulkResponse(Some(value)))
       }
     }
 
@@ -37,8 +37,8 @@ class StringCommandsTest extends Specification with RedisClientScope with ScalaC
           result   <- ops.get(key)
         } yield (original, result)
         val (original, result) = interpreter.runCommand(command)
-        original ==== Right(Some(value1))
-        result ==== Right(Some(value2))
+        original ==== Right(BulkResponse(Some(value1)))
+        result ==== Right(BulkResponse(Some(value2)))
       }
     }
 
@@ -50,9 +50,9 @@ class StringCommandsTest extends Specification with RedisClientScope with ScalaC
           result  <- ops.get(key)
         } yield (length1, length2, result)
         val (length1, length2, result) = interpreter.runCommand(command)
-        length1 ==== Right(value1.size)
-        length2 ==== Right(value1.size + value2.size)
-        result ==== Right(Some(value1 ++ value2))
+        length1 ==== Right(IntegerResponse(value1.size.toLong))
+        length2 ==== Right(IntegerResponse(value1.size.toLong + value2.size.toLong))
+        result ==== Right(BulkResponse(Some(value1 ++ value2)))
       }
     }
 

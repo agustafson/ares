@@ -29,9 +29,9 @@ case class RedisDatabase(commandInterpreter: ConnectionOps.Interp[Task], dbIndex
 
   def flushDb(): Unit = handleError("flush", commandInterpreter.flushdb)
 
-  private def handleError(operationName: String, task: Task[ErrorOr[Unit]]): Unit = {
+  private def handleError(operationName: String, task: Task[ErrorOr[OkStringResponse.type]]): Unit = {
     task.unsafeRun.fold[Unit]((error: Error) => {
       throw new RuntimeException(s"Could not $operationName database $dbIndex: $error")
-    }, identity)
+    }, _ => ())
   }
 }

@@ -6,7 +6,9 @@ sealed trait ValidRedisResponse extends RedisResponse
 
 sealed trait Error
 
-case class SimpleStringResponse(body: String) extends ValidRedisResponse
+sealed class SimpleStringResponse(body: String) extends ValidRedisResponse
+
+case object OkStringResponse extends SimpleStringResponse("OK")
 
 case class IntegerResponse(long: Long) extends ValidRedisResponse
 

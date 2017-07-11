@@ -20,7 +20,7 @@ class ListCommandsTest extends Specification with RedisClientScope with ScalaChe
   val listProperties: Properties = new Properties("List operations") with RedisCommandsScope {
     "lrange for an unknown key returns an empty list" >> prop { (key: String, startIndex: Int, endIndex: Int) =>
       withRepository { interpreter =>
-        interpreter.runCommand(ops.lrange(key, startIndex, endIndex)) ==== Right(List.empty)
+        interpreter.runCommand(ops.lrange(key, startIndex, endIndex)) ==== Right(ArrayResponse(List.empty))
       }
     }
 
@@ -32,8 +32,8 @@ class ListCommandsTest extends Specification with RedisClientScope with ScalaChe
             result <- ops.lrange(key, 0, -1)
           } yield (count, result)
         val (count, result) = interpreter.runCommand(op)
-        count ==== Right(1)
-        result ==== Right(List(value))
+        count ==== Right(IntegerResponse(1))
+        result ==== Right(toArrayResponse(List(value)))
       }
     }.noShrink.setGens(nonEmptyStringGen, byteVectorGen)
 
@@ -46,9 +46,9 @@ class ListCommandsTest extends Specification with RedisClientScope with ScalaChe
             result <- ops.lrange(key, 0, -1)
           } yield (count1, count2, result)
         val (count1, count2, result) = interpreter.runCommand(op)
-        count1 ==== Right(1)
-        count2 ==== Right(2)
-        result ==== Right(List(value1, value2))
+        count1 ==== Right(IntegerResponse(1))
+        count2 ==== Right(IntegerResponse(2))
+        result ==== Right(toArrayResponse(List(value1, value2)))
       }
     }.noShrink.setGens(nonEmptyStringGen, byteVectorGen, byteVectorGen)
 
@@ -61,9 +61,9 @@ class ListCommandsTest extends Specification with RedisClientScope with ScalaChe
             result <- ops.lrange(key, 0, -1)
           } yield (count1, count2, result)
         val (count1, count2, result) = interpreter.runCommand(op)
-        count1 ==== Right(1)
-        count2 ==== Right(2)
-        result ==== Right(List(value2, value1))
+        count1 ==== Right(IntegerResponse(1))
+        count2 ==== Right(IntegerResponse(2))
+        result ==== Right(toArrayResponse(List(value2, value1)))
       }
     }.noShrink.setGens(nonEmptyStringGen, byteVectorGen, byteVectorGen)
 
@@ -77,9 +77,9 @@ class ListCommandsTest extends Specification with RedisClientScope with ScalaChe
               result <- ops.lrange(key, 0, -1)
             } yield (count1, count2, result)
           val (count1, count2, result) = interpreter.runCommand(op)
-          count1 ==== Right(rightValues.size.toInt)
-          count2 ==== Right(leftValues.size.toInt + rightValues.size.toInt)
-          result ==== Right(leftValues.toList.reverse ++ rightValues.toList)
+          count1 ==== Right(IntegerResponse(rightValues.size))
+          count2 ==== Right(IntegerResponse(leftValues.size + rightValues.size))
+          result ==== Right(toArrayResponse(leftValues.toList.reverse ++ rightValues.toList))
         }
     }.noShrink.setGens(nonEmptyStringGen, nonEmptyListOfBytes, nonEmptyListOfBytes)
 
@@ -94,9 +94,9 @@ class ListCommandsTest extends Specification with RedisClientScope with ScalaChe
             result <- ops.lrange(key, 0, -1)
           } yield (count1, count2, result)
         val (count1, count2, result) = interpreter.runCommand(op)
-        count1 ==== Right(0)
-        count2 ==== Right(2)
-        result ==== Right(List(value, wibble))
+        count1 ==== Right(IntegerResponse(0))
+        count2 ==== Right(IntegerResponse(2))
+        result ==== Right(toArrayResponse(List(value, wibble)))
       }
     }.noShrink.setGens(nonEmptyStringGen, byteVectorGen)
 
@@ -111,13 +111,16 @@ class ListCommandsTest extends Specification with RedisClientScope with ScalaChe
             result <- ops.lrange(key, 0, -1)
           } yield (count1, count2, result)
         val (count1, count2, result) = interpreter.runCommand(op)
-        count1 ==== Right(0)
-        count2 ==== Right(2)
-        result ==== Right(List(wibble, value))
+        count1 ==== Right(IntegerResponse(0))
+        count2 ==== Right(IntegerResponse(2))
+        result ==== Right(toArrayResponse(List(wibble, value)))
       }
     }.noShrink.setGens(nonEmptyStringGen, byteVectorGen)
 
   }
+
+  private def toArrayResponse(items: List[Vector[Byte]]): ArrayResponse =
+    ArrayResponse(items.map(item => BulkResponse(Some(item))))
 
   s2"List operations$listProperties"
 }

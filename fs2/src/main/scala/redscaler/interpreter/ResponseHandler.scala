@@ -74,7 +74,7 @@ trait ResponseHandler[F[_]] extends StrictLogging {
     takeLine.andThen(_.mapLeft(bytes => bytes.map(_.toChar).mkString.toLong))
 
   private val processSimpleStringResponse: ByteHandle => ByteHandlePull[SimpleStringResponse] =
-    takeLine.andThen(_.mapLeft(bytes => SimpleStringResponse(bytes.asString)))
+    takeLine.andThen(_.mapLeft(bytes => new SimpleStringResponse(bytes.asString)))
 
   private val processBulkResponse: ByteHandle => ByteHandlePull[BulkResponse] = { h =>
     for {

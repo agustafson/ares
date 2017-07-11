@@ -26,5 +26,5 @@ case class PSubscribe(publishingChannelName: String, numberOfChannelsSubscribedT
 case class Unsubscribe(publishingChannelName: String, numberOfChannelsSubscribedTo: Int)  extends SubscriberResponse
 case class PUnsubscribe(publishingChannelName: String, numberOfChannelsSubscribedTo: Int) extends SubscriberResponse
 
-case class Message(publishingChannelName: String, message: Vector[Byte]) extends SubscriberResponse
+case class Message(publishingChannelName: String, message: Vector[Byte])  extends SubscriberResponse
 case class PMessage(publishingChannelName: String, message: Vector[Byte]) extends SubscriberResponse

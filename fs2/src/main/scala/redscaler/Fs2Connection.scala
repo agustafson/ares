@@ -40,10 +40,10 @@ class Fs2Connection[F[_]: Applicative: Catchable](val redisClient: Stream[F, Soc
 
   def toChunk(command: Command): Chunk[Byte] = {
     val bytes = new mutable.ListBuffer() +=
-        ASTERISK_BYTE ++= intCrlf(command.args.length + 1) +=
-        DOLLAR_BYTE ++= intCrlf(command.commandName.length) ++=
-        command.commandName.getBytes ++= CRLF ++=
-        command.args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
+      ASTERISK_BYTE ++= intCrlf(command.args.length + 1) +=
+      DOLLAR_BYTE ++= intCrlf(command.commandName.length) ++=
+      command.commandName.getBytes ++= CRLF ++=
+      command.args.flatMap(arg => (DOLLAR_BYTE +: intCrlf(arg.length)) ++ arg ++ CRLF)
 
     logger.trace(s"command created: ${bytes.result().toVector.asString}")
 

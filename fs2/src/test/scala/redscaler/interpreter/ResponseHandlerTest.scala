@@ -18,8 +18,8 @@ class ResponseHandlerTest extends Specification with ResponseHandler[Attempt] wi
 
     property("handle string response") = Prop.forAll { (bytes: List[Byte]) =>
       val buffer = new ListBuffer[Byte]() +=
-          RedisConstants.DOLLAR_BYTE ++= bytes.length.toString.getBytes ++= RedisConstants.CRLF ++=
-          bytes ++= RedisConstants.CRLF
+        RedisConstants.DOLLAR_BYTE ++= bytes.length.toString.getBytes ++= RedisConstants.CRLF ++=
+        bytes ++= RedisConstants.CRLF
 
       getResponseFromBytes(buffer.result().toArray) === Vector(BulkResponse(Some(bytes.toVector)))
     }

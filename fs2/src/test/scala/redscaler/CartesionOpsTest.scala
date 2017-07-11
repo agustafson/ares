@@ -10,7 +10,7 @@ class CartesionOpsTest extends Specification with RedisClientScope {
     "combine together" in new RedisCommandsScope with Scope {
       withRepository { interpreter =>
         val (key, value) = ("foo", "bar".getBytes.toVector)
-        val op = ops.set(key, value) *> ops.get(key)
+        val op           = ops.set(key, value) *> ops.get(key)
         interpreter.runCommand(op) ==== Right(Some(value))
       }
     }

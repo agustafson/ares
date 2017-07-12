@@ -17,12 +17,12 @@ class Fs2CommandInterpreter[F[_]: Applicative: Catchable](connection: Connection
   type Result[A] = F[ErrorOr[A]]
 
   override def selectDatabase(databaseIndex: Int): Result[Unit] = {
-    logger.info(s"Selecting database $databaseIndex")
+    logger.debug(s"Selecting database $databaseIndex")
     execute(Command.keyCommand(s"SELECT", databaseIndex.toString, Seq.empty)).map(handleOkResponse)
   }
 
   override def flushdb: Result[Unit] = {
-    logger.info(s"Flushing db")
+    logger.debug(s"Flushing db")
     execute(Command.noArgCommand("flushdb")).map(handleOkResponse)
   }
 
